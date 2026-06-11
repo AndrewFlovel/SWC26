@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchMatches, fetchTeams } from './api/client';
 import GroupTable from './components/GroupTable';
+import LanguageSelector from './components/LanguageSelector';
 import MatchAnalysis from './components/MatchAnalysis';
 import MatchList from './components/MatchList';
+import { useI18n } from './i18n';
 import HeroScene from './three/HeroScene';
 import type { Fixture, Team } from './types';
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
 export default function App() {
+  const { t } = useI18n();
   const [teams, setTeams] = useState<Record<string, Team>>({});
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [group, setGroup] = useState('A');
@@ -22,11 +25,7 @@ export default function App() {
         setFixtures(matchList);
       })
       .catch((err: unknown) => {
-        setError(
-          err instanceof Error
-            ? `Engine unreachable: ${err.message}. Is the backend running on port 8001?`
-            : 'Engine unreachable.',
-        );
+        setError(err instanceof Error ? err.message : 'unknown');
       });
   }, []);
 
@@ -38,24 +37,23 @@ export default function App() {
   return (
     <>
       <HeroScene />
+      <LanguageSelector />
       <div className="shell">
         <header className="masthead">
-          <div className="kicker">FIFA World Cup 2026 · Predictive Engine</div>
+          <div className="kicker">{t('kicker')}</div>
           <h1>
             SWC26
             <br />
-            BLOOD &amp; GLORY
+            {t('titleLine2')}
           </h1>
-          <p>
-            Elo-grounded bivariate Poisson with Dixon-Coles correction, blended with xG
-            tactical profiles, injury attrition, altitude hypoxia and WBGT heat burden.
-            Drag the sliders — the engine recalculates in real time.
-          </p>
+          <p>{t('heroDesc')}</p>
         </header>
 
-        {error && <div className="error-box">{error}</div>}
+        {error && (
+          <div className="error-box">{t('engineUnreachable', { msg: error })}</div>
+        )}
 
-        <h2 className="section-title">Group stage · select battlefield</h2>
+        <h2 className="section-title">{t('sectionGroups')}</h2>
         <div className="group-chips">
           {GROUPS.map((g) => (
             <button
@@ -69,15 +67,14 @@ export default function App() {
           ))}
         </div>
 
-        <h2 className="section-title">Upcoming matches — Group {group}</h2>
+        <h2 className="section-title">{t('sectionMatches', { g: group })}</h2>
         <MatchList fixtures={groupFixtures} onSelect={setSelected} />
 
-        <h2 className="section-title">Qualification odds</h2>
+        <h2 className="section-title">{t('sectionOdds')}</h2>
         <GroupTable group={group} />
 
         <div className="footnote">
-          <b>SWC26</b> · Monte Carlo engine · Dixon-Coles ρ = −0.13 · 48 nations · 16 venues ·
-          built from deep-research telemetry, June 2026
+          <b>SWC26</b> · {t('footnote')}
         </div>
       </div>
 

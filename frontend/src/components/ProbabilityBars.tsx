@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useI18n } from '../i18n';
 import { flag } from '../types';
 
 interface Props {
@@ -41,10 +42,11 @@ function Bar({
 }
 
 export default function ProbabilityBars({ home, away, pHome, pDraw, pAway }: Props) {
+  const { t } = useI18n();
   return (
     <div className="prob-block">
       <Bar label={`${flag(home)} ${home}`} pct={pHome} kind="home" />
-      <Bar label="Draw" pct={pDraw} kind="draw" />
+      <Bar label={t('draw')} pct={pDraw} kind="draw" />
       <Bar label={`${flag(away)} ${away}`} pct={pAway} kind="away" />
     </div>
   );

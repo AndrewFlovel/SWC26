@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useI18n } from '../i18n';
 import type { Fixture } from '../types';
 import { flag } from '../types';
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 function VenueBadges({ fixture }: { fixture: Fixture }) {
+  const { t } = useI18n();
   const { venue } = fixture;
   return (
     <div className="venue-row">
@@ -22,13 +24,16 @@ function VenueBadges({ fixture }: { fixture: Fixture }) {
         <span className="badge hot">🔥 WBGT {venue.wbgt_score.toFixed(0)}</span>
       )}
       {fixture.home_team_host && (
-        <span className="badge host">★ {fixture.home_team_host} host</span>
+        <span className="badge host">
+          {t('hostBadge', { team: fixture.home_team_host })}
+        </span>
       )}
     </div>
   );
 }
 
 export default function MatchList({ fixtures, onSelect }: Props) {
+  const { t } = useI18n();
   return (
     <div className="match-grid">
       {fixtures.map((f, i) => (
@@ -42,8 +47,10 @@ export default function MatchList({ fixtures, onSelect }: Props) {
           transition={{ delay: i * 0.05 }}
         >
           <div className="meta">
-            <span>Group {f.group} · Match {f.id}</span>
-            <span>Analyze →</span>
+            <span>
+              {t('group')} {f.group} · {t('match')} {f.id}
+            </span>
+            <span>{t('analyze')}</span>
           </div>
           <div className="teams">
             <span className="team-side">

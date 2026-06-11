@@ -1,11 +1,25 @@
 # SWC26 — Blood & Glory
 
+> 🌐 **English** · [Español](README.es.md) · Setup guides: [EN](SETUP.md) / [ES](SETUP.es.md)
+
 **Interactive predictive analytics platform for the FIFA World Cup 2026**, built from
 deep-research telemetry on the 48 qualified nations: Elo ratings, xG/xGA tactical
 profiles, form momentum, injury attrition, transcontinental travel burden, altitude
 hypoxia and WBGT heat stress.
 
 Dark, blood-red, WebGL-powered. Drag the sliders — the engine recalculates in real time.
+The interface is available in **English, Spanish and Portuguese** (selector at the top
+right; it also auto-detects your browser language).
+
+## Quickstart (Docker)
+
+```bash
+docker compose up --build
+```
+
+Open <http://localhost:5173>. That's it — nginx serves the frontend and proxies
+`/api` to the backend container. For local development without Docker, see
+[SETUP.md](SETUP.md).
 
 ## Architecture
 
@@ -14,7 +28,8 @@ Dark, blood-red, WebGL-powered. Drag the sliders — the engine recalculates in 
 │  React 19 + TypeScript  │  HTTP  │  FastAPI (Python 3.10+)      │
 │  Vite · R3F · Motion    │ ─────► │  numpy · scipy · pandas      │
 │  3D hero, dashboard,    │  JSON  │  Elo + xG bivariate Poisson  │
-│  live what-if sliders   │ ◄───── │  Dixon-Coles · Monte Carlo   │
+│  live what-if sliders,  │ ◄───── │  Dixon-Coles · Monte Carlo   │
+│  i18n EN/ES/PT          │        │                              │
 └─────────────────────────┘        └──────────────────────────────┘
 ```
 
@@ -27,34 +42,6 @@ low-score correction (ρ = −0.13). Group and tournament outcomes are estimated
 Monte Carlo simulation with full FIFA tiebreakers and the best-8-thirds rule.
 A maximum-likelihood calibrator with Dixon-Coles time decay is included
 (`backend/app/engine/calibration.py`).
-
-## Quickstart
-
-### Backend (port 8001)
-
-```bash
-cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/uvicorn app.main:app --port 8001
-```
-
-### Frontend (port 5173)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open <http://localhost:5173>. The frontend expects the API at
-`http://localhost:8001` (override with `VITE_API_BASE`).
-
-### Tests
-
-```bash
-cd backend && .venv/bin/python -m pytest tests/ -q
-```
 
 ## API
 
@@ -72,10 +59,12 @@ Interactive OpenAPI docs at `http://localhost:8001/docs`.
 ## Repository layout
 
 ```
+docker-compose.yml     One-command deployment (frontend + backend)
 backend/app/engine/    Prediction engine (config, core math, predictor,
                        Monte Carlo simulators, MLE calibration, data loader)
 backend/app/data/      48-team dataset + 16-venue catalogue (June 2026)
 backend/tests/         Engine and API sanity tests
+frontend/src/i18n.tsx  EN/ES/PT translations + language context
 frontend/src/three/    React Three Fiber blood-themed 3D hero scene
 frontend/src/components/  Dashboard, group tables, interactive match analysis
 research.md            Source deep-research document

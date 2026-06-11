@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchGroupSim } from '../api/client';
+import { useI18n } from '../i18n';
 import type { GroupSimRow } from '../types';
 import { flag } from '../types';
 
 export default function GroupTable({ group }: { group: string }) {
+  const { t } = useI18n();
   const [rows, setRows] = useState<GroupSimRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,30 +18,32 @@ export default function GroupTable({ group }: { group: string }) {
         if (!cancelled) setRows(resp.table);
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Simulation failed');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : t('simFailed'));
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [group]);
+  }, [group, t]);
 
   if (error) return <div className="error-box">{error}</div>;
 
   return (
     <div className="panel">
       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--blood)', marginBottom: 14 }}>
-        Group {group} — Monte Carlo qualification odds (3,000 runs)
+        {t('groupTableTitle', { g: group })}
         {!rows && <span className="loading-pulse" />}
       </h3>
       <table className="sim-table">
         <thead>
           <tr>
-            <th>Team</th>
-            <th>Win group</th>
-            <th>2nd</th>
-            <th>3rd</th>
-            <th>Avg pts</th>
-            <th>Top-2 qualify</th>
+            <th>{t('team')}</th>
+            <th>{t('winGroup')}</th>
+            <th>{t('second')}</th>
+            <th>{t('third')}</th>
+            <th>{t('avgPts')}</th>
+            <th>{t('top2')}</th>
           </tr>
         </thead>
         <tbody>
@@ -60,14 +64,13 @@ export default function GroupTable({ group }: { group: string }) {
               </td>
             </tr>
           ))}
-          {!rows &&
-            Array.from({ length: 4 }, (_, i) => (
-              <tr key={i}>
-                <td colSpan={6} style={{ color: 'var(--text-dim)' }}>
-                  Simulating…
-                </td>
-              </tr>
-            ))}
+          {!rows && (
+            <tr>
+              <td colSpan={6} style={{ color: 'var(--text-dim)' }}>
+                {t('simulating')}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

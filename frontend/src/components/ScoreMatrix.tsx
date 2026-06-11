@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { flag } from '../types';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 /** Heatmap of exact-score probabilities, blood-red intensity scale. */
 export default function ScoreMatrix({ home, away, matrix, maxGoalsShown = 6 }: Props) {
+  const { t } = useI18n();
   const n = Math.min(maxGoalsShown, matrix.length);
   const peak = Math.max(...matrix.slice(0, n).flatMap((row) => row.slice(0, n)), 1e-9);
 
@@ -23,7 +25,7 @@ export default function ScoreMatrix({ home, away, matrix, maxGoalsShown = 6 }: P
   return (
     <div className="matrix-wrap">
       <div className="axis-label">
-        rows: {flag(home)} {home} goals · cols: {flag(away)} {away} goals
+        {t('matrixAxis', { home: `${flag(home)} ${home}`, away: `${flag(away)} ${away}` })}
       </div>
       <table className="matrix">
         <thead>

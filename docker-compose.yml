@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    container_name: swc26-backend
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: swc26-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

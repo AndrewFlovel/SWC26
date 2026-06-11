@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLivePrediction } from '../api/client';
+import { useI18n } from '../i18n';
 import type { Fixture, PredictRequest, Team } from '../types';
 import { flag } from '../types';
 import ProbabilityBars from './ProbabilityBars';
@@ -47,6 +48,7 @@ function Slider({ label, value, min, max, step, format, onChange }: SliderProps)
 type Advantage = 'none' | 'home' | 'away';
 
 export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
+  const { t } = useI18n();
   const homeTeam = teams[fixture.home];
   const awayTeam = teams[fixture.away];
 
@@ -108,20 +110,20 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
               {flag(fixture.away)} {fixture.away}
               {loading && <span className="loading-pulse" />}
             </h2>
-            <button type="button" className="close" onClick={onClose} aria-label="Close">
+            <button type="button" className="close" onClick={onClose} aria-label={t('close')}>
               ✕
             </button>
           </div>
           <div className="analysis-sub">
-            {fixture.venue.stadium}, {fixture.venue.city} · Matchday {fixture.matchday} ·{' '}
-            {fixture.date} · {fixture.venue.notes}
+            {fixture.venue.stadium}, {fixture.venue.city} · {t('matchday')}{' '}
+            {fixture.matchday} · {fixture.date} · {fixture.venue.notes}
           </div>
 
           <div className="analysis-grid">
             <div className="controls">
-              <h3>Predictive parameters</h3>
+              <h3>{t('params')}</h3>
               <Slider
-                label={`${flag(fixture.home)} ${fixture.home} — xG form`}
+                label={`${flag(fixture.home)} ${fixture.home} — ${t('xgForm')}`}
                 value={homeForm}
                 min={0}
                 max={1}
@@ -129,7 +131,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                 onChange={setHomeForm}
               />
               <Slider
-                label={`${flag(fixture.home)} ${fixture.home} — injury impact`}
+                label={`${flag(fixture.home)} ${fixture.home} — ${t('injuryImpact')}`}
                 value={homeInjury}
                 min={0}
                 max={1}
@@ -137,7 +139,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                 onChange={setHomeInjury}
               />
               <Slider
-                label={`${flag(fixture.away)} ${fixture.away} — xG form`}
+                label={`${flag(fixture.away)} ${fixture.away} — ${t('xgForm')}`}
                 value={awayForm}
                 min={0}
                 max={1}
@@ -145,7 +147,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                 onChange={setAwayForm}
               />
               <Slider
-                label={`${flag(fixture.away)} ${fixture.away} — injury impact`}
+                label={`${flag(fixture.away)} ${fixture.away} — ${t('injuryImpact')}`}
                 value={awayInjury}
                 min={0}
                 max={1}
@@ -153,7 +155,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                 onChange={setAwayInjury}
               />
               <Slider
-                label="Altitude / fatigue penalty"
+                label={t('altitudeSlider')}
                 value={altitude}
                 min={0}
                 max={3000}
@@ -162,7 +164,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                 onChange={setAltitude}
               />
               <Slider
-                label="Heat burden (WBGT index)"
+                label={t('heatSlider')}
                 value={heat}
                 min={0}
                 max={2}
@@ -170,7 +172,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                 onChange={setHeat}
               />
               <Slider
-                label="xG model weight (vs Elo)"
+                label={t('blendSlider')}
                 value={blend}
                 min={0}
                 max={1}
@@ -179,7 +181,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
               />
               <div className="slider-row">
                 <label>
-                  <span>Host advantage</span>
+                  <span>{t('hostAdvantage')}</span>
                 </label>
                 <div className="seg">
                   {(['none', 'home', 'away'] as const).map((opt) => (
@@ -190,7 +192,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                       onClick={() => setAdvantage(opt)}
                     >
                       {opt === 'none'
-                        ? 'Neutral'
+                        ? t('neutral')
                         : opt === 'home'
                           ? fixture.home
                           : fixture.away}
@@ -202,7 +204,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
 
             <div className="results">
               <h3>
-                Live simulation output
+                {t('liveOutput')}
                 {prediction && (
                   <span style={{ color: 'var(--text-dim)', marginLeft: 12, letterSpacing: 0 }}>
                     λ {prediction.lambda_home.toFixed(2)} / {prediction.lambda_away.toFixed(2)}
@@ -219,9 +221,9 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
                     pDraw={prediction.p_draw}
                     pAway={prediction.p_away}
                   />
-                  <h3>Most probable scorelines</h3>
+                  <h3>{t('topScores')}</h3>
                   <TopScorelines scorelines={prediction.top_scorelines} />
-                  <h3>Exact score probability matrix</h3>
+                  <h3>{t('matrixTitle')}</h3>
                   <ScoreMatrix
                     home={prediction.home}
                     away={prediction.away}
@@ -231,7 +233,7 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
               )}
               {!prediction && !error && (
                 <div style={{ color: 'var(--text-dim)', fontSize: 14 }}>
-                  Crunching probabilities…
+                  {t('crunching')}
                 </div>
               )}
             </div>
