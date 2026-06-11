@@ -1,0 +1,22 @@
+# Local clones / workspace-only
+claudedesignskills/
+.claude/skills/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,61 @@
+[
+  {"name": "Mexico", "group": "A", "elo": 1960, "fifa_ranking": 15, "confederation": "CONCACAF", "is_host": true, "altitude_adapted": true, "xg_avg": 1.66, "xga_avg": 0.88, "form_index": 0.70, "injury_impact": 0.10},
+  {"name": "South Korea", "group": "A", "elo": 1880, "fifa_ranking": 24, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 1.30, "xga_avg": 1.11, "form_index": 0.60, "injury_impact": 0.10},
+  {"name": "South Africa", "group": "A", "elo": 1690, "fifa_ranking": 58, "confederation": "CAF", "is_host": false, "altitude_adapted": true, "xg_avg": 1.00, "xga_avg": 1.53, "form_index": 0.30, "injury_impact": 0.10},
+  {"name": "Czechia", "group": "A", "elo": 1810, "fifa_ranking": 36, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.03, "xga_avg": 1.48, "form_index": 0.70, "injury_impact": 0.10},
+
+  {"name": "Canada", "group": "B", "elo": 1800, "fifa_ranking": 40, "confederation": "CONCACAF", "is_host": true, "altitude_adapted": false, "xg_avg": 1.39, "xga_avg": 1.12, "form_index": 0.70, "injury_impact": 0.40},
+  {"name": "Switzerland", "group": "B", "elo": 1930, "fifa_ranking": 19, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.59, "xga_avg": 0.86, "form_index": 0.50, "injury_impact": 0.10},
+  {"name": "Qatar", "group": "B", "elo": 1730, "fifa_ranking": 55, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 1.00, "xga_avg": 1.55, "form_index": 0.10, "injury_impact": 0.10},
+  {"name": "Bosnia and Herzegovina", "group": "B", "elo": 1720, "fifa_ranking": 65, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.04, "xga_avg": 1.49, "form_index": 0.50, "injury_impact": 0.10},
+
+  {"name": "Brazil", "group": "C", "elo": 2085, "fifa_ranking": 6, "confederation": "CONMEBOL", "is_host": false, "altitude_adapted": false, "xg_avg": 2.15, "xga_avg": 0.68, "form_index": 0.70, "injury_impact": 0.45},
+  {"name": "Morocco", "group": "C", "elo": 2060, "fifa_ranking": 8, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 1.45, "xga_avg": 0.97, "form_index": 0.70, "injury_impact": 0.15},
+  {"name": "Scotland", "group": "C", "elo": 1780, "fifa_ranking": 42, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 0.91, "xga_avg": 1.76, "form_index": 0.40, "injury_impact": 0.20},
+  {"name": "Haiti", "group": "C", "elo": 1620, "fifa_ranking": 88, "confederation": "CONCACAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.83, "xga_avg": 1.94, "form_index": 0.70, "injury_impact": 0.10},
+
+  {"name": "United States", "group": "D", "elo": 1950, "fifa_ranking": 16, "confederation": "CONCACAF", "is_host": true, "altitude_adapted": false, "xg_avg": 1.67, "xga_avg": 0.85, "form_index": 0.60, "injury_impact": 0.30},
+  {"name": "Australia", "group": "D", "elo": 1830, "fifa_ranking": 26, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 1.13, "xga_avg": 1.25, "form_index": 0.40, "injury_impact": 0.20},
+  {"name": "Paraguay", "group": "D", "elo": 1770, "fifa_ranking": 48, "confederation": "CONMEBOL", "is_host": false, "altitude_adapted": false, "xg_avg": 0.95, "xga_avg": 1.54, "form_index": 0.40, "injury_impact": 0.10},
+  {"name": "Turkey", "group": "D", "elo": 1840, "fifa_ranking": 38, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.14, "xga_avg": 1.25, "form_index": 0.90, "injury_impact": 0.10},
+
+  {"name": "Germany", "group": "E", "elo": 2040, "fifa_ranking": 10, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 2.02, "xga_avg": 0.71, "form_index": 1.00, "injury_impact": 0.35},
+  {"name": "Ecuador", "group": "E", "elo": 1860, "fifa_ranking": 30, "confederation": "CONMEBOL", "is_host": false, "altitude_adapted": true, "xg_avg": 1.36, "xga_avg": 1.07, "form_index": 0.60, "injury_impact": 0.10},
+  {"name": "Ivory Coast", "group": "E", "elo": 1790, "fifa_ranking": 39, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.98, "xga_avg": 1.61, "form_index": 0.80, "injury_impact": 0.10},
+  {"name": "Curacao", "group": "E", "elo": 1550, "fifa_ranking": 82, "confederation": "CONCACAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.87, "xga_avg": 1.83, "form_index": 0.20, "injury_impact": 0.10},
+
+  {"name": "Netherlands", "group": "F", "elo": 2070, "fifa_ranking": 7, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.66, "xga_avg": 0.81, "form_index": 0.50, "injury_impact": 0.50},
+  {"name": "Japan", "group": "F", "elo": 1935, "fifa_ranking": 18, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 1.39, "xga_avg": 0.95, "form_index": 1.00, "injury_impact": 0.25},
+  {"name": "Tunisia", "group": "F", "elo": 1765, "fifa_ranking": 41, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.85, "xga_avg": 1.67, "form_index": 0.40, "injury_impact": 0.10},
+  {"name": "Sweden", "group": "F", "elo": 1820, "fifa_ranking": 27, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 0.98, "xga_avg": 1.44, "form_index": 0.50, "injury_impact": 0.10},
+
+  {"name": "Belgium", "group": "G", "elo": 2050, "fifa_ranking": 9, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.75, "xga_avg": 0.77, "form_index": 0.80, "injury_impact": 0.15},
+  {"name": "Iran", "group": "G", "elo": 1870, "fifa_ranking": 21, "confederation": "AFC", "is_host": false, "altitude_adapted": true, "xg_avg": 1.20, "xga_avg": 1.17, "form_index": 0.60, "injury_impact": 0.10},
+  {"name": "Egypt", "group": "G", "elo": 1805, "fifa_ranking": 34, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 1.03, "xga_avg": 1.44, "form_index": 0.50, "injury_impact": 0.10},
+  {"name": "New Zealand", "group": "G", "elo": 1600, "fifa_ranking": 95, "confederation": "OFC", "is_host": false, "altitude_adapted": false, "xg_avg": 0.96, "xga_avg": 1.56, "form_index": 0.20, "injury_impact": 0.10},
+
+  {"name": "Spain", "group": "H", "elo": 2150, "fifa_ranking": 2, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 2.45, "xga_avg": 0.63, "form_index": 0.70, "injury_impact": 0.20},
+  {"name": "Uruguay", "group": "H", "elo": 1940, "fifa_ranking": 17, "confederation": "CONMEBOL", "is_host": false, "altitude_adapted": false, "xg_avg": 1.40, "xga_avg": 1.10, "form_index": 0.40, "injury_impact": 0.10},
+  {"name": "Saudi Arabia", "group": "H", "elo": 1760, "fifa_ranking": 54, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 0.87, "xga_avg": 1.91, "form_index": 0.10, "injury_impact": 0.10},
+  {"name": "Cape Verde", "group": "H", "elo": 1680, "fifa_ranking": 67, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.86, "xga_avg": 1.93, "form_index": 0.40, "injury_impact": 0.10},
+
+  {"name": "France", "group": "I", "elo": 2160, "fifa_ranking": 1, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 2.17, "xga_avg": 0.72, "form_index": 0.80, "injury_impact": 0.20},
+  {"name": "Senegal", "group": "I", "elo": 1970, "fifa_ranking": 14, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 1.06, "xga_avg": 1.43, "form_index": 0.80, "injury_impact": 0.10},
+  {"name": "Norway", "group": "I", "elo": 1850, "fifa_ranking": 35, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.46, "xga_avg": 1.05, "form_index": 0.70, "injury_impact": 0.10},
+  {"name": "Iraq", "group": "I", "elo": 1700, "fifa_ranking": 59, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 0.70, "xga_avg": 2.20, "form_index": 0.50, "injury_impact": 0.10},
+
+  {"name": "Argentina", "group": "J", "elo": 2135, "fifa_ranking": 3, "confederation": "CONMEBOL", "is_host": false, "altitude_adapted": false, "xg_avg": 2.15, "xga_avg": 0.66, "form_index": 1.00, "injury_impact": 0.25},
+  {"name": "Austria", "group": "J", "elo": 1890, "fifa_ranking": 25, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.22, "xga_avg": 1.22, "form_index": 0.90, "injury_impact": 0.20},
+  {"name": "Algeria", "group": "J", "elo": 1815, "fifa_ranking": 33, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 1.02, "xga_avg": 1.49, "form_index": 0.70, "injury_impact": 0.10},
+  {"name": "Jordan", "group": "J", "elo": 1695, "fifa_ranking": 70, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 0.84, "xga_avg": 1.87, "form_index": 0.30, "injury_impact": 0.10},
+
+  {"name": "Portugal", "group": "K", "elo": 2100, "fifa_ranking": 5, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 2.16, "xga_avg": 0.71, "form_index": 0.50, "injury_impact": 0.10},
+  {"name": "Colombia", "group": "K", "elo": 1980, "fifa_ranking": 13, "confederation": "CONMEBOL", "is_host": false, "altitude_adapted": true, "xg_avg": 1.51, "xga_avg": 1.00, "form_index": 0.60, "injury_impact": 0.10},
+  {"name": "Uzbekistan", "group": "K", "elo": 1710, "fifa_ranking": 64, "confederation": "AFC", "is_host": false, "altitude_adapted": false, "xg_avg": 0.87, "xga_avg": 1.89, "form_index": 0.50, "injury_impact": 0.10},
+  {"name": "DR Congo", "group": "K", "elo": 1750, "fifa_ranking": 62, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.89, "xga_avg": 1.83, "form_index": 0.70, "injury_impact": 0.10},
+
+  {"name": "England", "group": "L", "elo": 2110, "fifa_ranking": 4, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 2.25, "xga_avg": 0.67, "form_index": 0.70, "injury_impact": 0.25},
+  {"name": "Croatia", "group": "L", "elo": 2020, "fifa_ranking": 11, "confederation": "UEFA", "is_host": false, "altitude_adapted": false, "xg_avg": 1.41, "xga_avg": 1.05, "form_index": 0.60, "injury_impact": 0.10},
+  {"name": "Panama", "group": "L", "elo": 1755, "fifa_ranking": 45, "confederation": "CONCACAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.86, "xga_avg": 1.88, "form_index": 0.40, "injury_impact": 0.10},
+  {"name": "Ghana", "group": "L", "elo": 1740, "fifa_ranking": 60, "confederation": "CAF", "is_host": false, "altitude_adapted": false, "xg_avg": 0.89, "xga_avg": 1.82, "form_index": 0.10, "injury_impact": 0.20}
+]

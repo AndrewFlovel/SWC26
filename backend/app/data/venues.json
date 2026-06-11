@@ -1,0 +1,39 @@
+{
+  "venues": [
+    {"id": "atlanta", "stadium": "Mercedes-Benz Stadium", "city": "Atlanta", "country": "USA", "altitude_m": 320, "heat_index": 1.2, "wbgt_score": 88.0, "notes": "Hot and humid Southeast; retractable roof mitigates direct sun."},
+    {"id": "boston", "stadium": "Gillette Stadium", "city": "Boston", "country": "USA", "altitude_m": 90, "heat_index": 0.5, "wbgt_score": 70.0, "notes": "Temperate Northeast; cool-season Kentucky bluegrass surface."},
+    {"id": "dallas", "stadium": "AT&T Stadium", "city": "Dallas", "country": "USA", "altitude_m": 180, "heat_index": 1.8, "wbgt_score": 98.5, "notes": "Extreme peak temperatures (97F); roof limits but does not remove burden."},
+    {"id": "guadalajara", "stadium": "Estadio Akron", "city": "Guadalajara", "country": "Mexico", "altitude_m": 1500, "heat_index": 1.0, "wbgt_score": 78.0, "notes": "Moderate altitude intersecting tropical rainy-season onset."},
+    {"id": "houston", "stadium": "NRG Stadium", "city": "Houston", "country": "USA", "altitude_m": 15, "heat_index": 2.0, "wbgt_score": 100.0, "notes": "Severe heat and >70% humidity; highest WBGT burden of the tournament."},
+    {"id": "kansas_city", "stadium": "Arrowhead Stadium", "city": "Kansas City", "country": "USA", "altitude_m": 270, "heat_index": 1.0, "wbgt_score": 85.0, "notes": "Hot continental summers; open-air bowl."},
+    {"id": "los_angeles", "stadium": "SoFi Stadium", "city": "Los Angeles", "country": "USA", "altitude_m": 30, "heat_index": 0.5, "wbgt_score": 72.0, "notes": "Mild Pacific climate; indoor-outdoor canopy."},
+    {"id": "mexico_city", "stadium": "Estadio Azteca", "city": "Mexico City", "country": "Mexico", "altitude_m": 2240, "heat_index": 0.3, "wbgt_score": 77.9, "notes": "Extreme altitude (2,240m) causing severe hypoxic strain on unacclimated sides."},
+    {"id": "miami", "stadium": "Hard Rock Stadium", "city": "Miami", "country": "USA", "altitude_m": 3, "heat_index": 1.7, "wbgt_score": 95.4, "notes": "Oppressive 75% humidity; open-air with maximum solar radiation exposure."},
+    {"id": "monterrey", "stadium": "Estadio BBVA", "city": "Monterrey", "country": "Mexico", "altitude_m": 540, "heat_index": 1.5, "wbgt_score": 90.0, "notes": "Hot semi-arid valley heat trapped by surrounding mountains."},
+    {"id": "new_york", "stadium": "MetLife Stadium", "city": "New York / New Jersey", "country": "USA", "altitude_m": 3, "heat_index": 0.7, "wbgt_score": 75.0, "notes": "Northeast corridor hub; final venue."},
+    {"id": "philadelphia", "stadium": "Lincoln Financial Field", "city": "Philadelphia", "country": "USA", "altitude_m": 12, "heat_index": 0.8, "wbgt_score": 76.0, "notes": "Warm but manageable mid-Atlantic summer."},
+    {"id": "san_francisco", "stadium": "Levi's Stadium", "city": "San Francisco Bay Area", "country": "USA", "altitude_m": 3, "heat_index": 0.2, "wbgt_score": 68.0, "notes": "Cool, dry Bay Area climate preserving sprint output."},
+    {"id": "seattle", "stadium": "Lumen Field", "city": "Seattle", "country": "USA", "altitude_m": 5, "heat_index": 0.1, "wbgt_score": 65.0, "notes": "Temperate maritime climate (71-77F) favoring high-tempo systems."},
+    {"id": "toronto", "stadium": "BMO Field", "city": "Toronto", "country": "Canada", "altitude_m": 76, "heat_index": 0.4, "wbgt_score": 71.0, "notes": "Mild lakeside climate; cool-season grass mixture."},
+    {"id": "vancouver", "stadium": "BC Place", "city": "Vancouver", "country": "Canada", "altitude_m": 5, "heat_index": 0.1, "wbgt_score": 64.0, "notes": "Coolest venue of the tournament; coastal maritime air."}
+  ],
+  "group_clusters": {
+    "A": ["mexico_city", "guadalajara", "monterrey"],
+    "B": ["toronto", "los_angeles", "seattle"],
+    "C": ["atlanta", "miami", "new_york"],
+    "D": ["los_angeles", "san_francisco", "seattle"],
+    "E": ["philadelphia", "boston", "toronto"],
+    "F": ["dallas", "houston", "kansas_city"],
+    "G": ["seattle", "san_francisco", "vancouver"],
+    "H": ["miami", "atlanta", "houston"],
+    "I": ["new_york", "philadelphia", "boston"],
+    "J": ["kansas_city", "san_francisco", "dallas"],
+    "K": ["houston", "mexico_city", "guadalajara"],
+    "L": ["toronto", "boston", "new_york"]
+  },
+  "matchday_dates": {
+    "1": "2026-06-13",
+    "2": "2026-06-19",
+    "3": "2026-06-25"
+  }
+}
