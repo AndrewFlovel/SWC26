@@ -7,6 +7,7 @@ import { flag } from '../types';
 export default function GroupTable({ group }: { group: string }) {
   const { t } = useI18n();
   const [rows, setRows] = useState<GroupSimRow[] | null>(null);
+  const [played, setPlayed] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,7 +16,10 @@ export default function GroupTable({ group }: { group: string }) {
     setError(null);
     fetchGroupSim(group)
       .then((resp) => {
-        if (!cancelled) setRows(resp.table);
+        if (!cancelled) {
+          setRows(resp.table);
+          setPlayed(resp.played ?? 0);
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) {
@@ -35,6 +39,11 @@ export default function GroupTable({ group }: { group: string }) {
         {t('groupTableTitle', { g: group })}
         {!rows && <span className="loading-pulse" />}
       </h3>
+      {played > 0 && (
+        <div className="badge host" style={{ display: 'inline-block', marginBottom: 12 }}>
+          ⚽ {t('oddsConditioned', { n: played })}
+        </div>
+      )}
       <table className="sim-table">
         <thead>
           <tr>

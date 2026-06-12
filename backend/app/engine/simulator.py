@@ -4,7 +4,7 @@ tiebreakers and the full 12-group tournament with the best-8-thirds rule."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -100,15 +100,28 @@ class MonteCarloSimulator:
             i = j
         return final
 
-    def simulate_group_once(self, teams: Sequence[TeamProfile]) -> List[GroupRecord]:
+    def simulate_group_once(
+        self,
+        teams: Sequence[TeamProfile],
+        fixed_results: Optional[Dict[Tuple[str, str], Tuple[int, int]]] = None,
+    ) -> List[GroupRecord]:
+        """Pairs present in fixed_results use the recorded score instead of
+        sampling, conditioning the simulation on already-played matches."""
         if len(teams) != 4:
             raise ValueError("A 2026 World Cup group has exactly 4 teams.")
+        fixed = fixed_results or {}
         pairs = [(teams[i], teams[j]) for i in range(4) for j in range(i + 1, 4)]
-        results = {(h.name, a.name): self._sample_score(h, a) for h, a in pairs}
+        results = {
+            (h.name, a.name): fixed.get((h.name, a.name)) or self._sample_score(h, a)
+            for h, a in pairs
+        }
         return self._rank_records(teams, results)
 
     def simulate_group(
-        self, teams: Sequence[TeamProfile], n_sims: int = 10_000
+        self,
+        teams: Sequence[TeamProfile],
+        n_sims: int = 10_000,
+        fixed_results: Optional[Dict[Tuple[str, str], Tuple[int, int]]] = None,
     ) -> List[dict]:
         """Run the group n_sims times; returns per-team qualification stats."""
         if n_sims <= 0:
@@ -116,7 +129,7 @@ class MonteCarloSimulator:
         names = [t.name for t in teams]
         tally = {n: {"P1": 0, "P2": 0, "P3": 0, "P4": 0, "pts": 0} for n in names}
         for _ in range(n_sims):
-            ranked = self.simulate_group_once(teams)
+            ranked = self.simulate_group_once(teams, fixed_results)
             for pos, rec in enumerate(ranked, start=1):
                 tally[rec.name][f"P{pos}"] += 1
                 tally[rec.name]["pts"] += rec.pts

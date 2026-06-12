@@ -1,6 +1,7 @@
-"""Data layer: loads the 48-team dataset and venue catalogue, resolves the
-official December 2025 draw, and generates the 72 group-stage fixtures with
-venue-derived environmental context."""
+"""Data layer: loads the 48-team dataset, venue catalogue and the official
+group-stage fixture list (per-match dates and venues from the published
+FIFA schedule — see fixtures.json "source"), resolving the December 2025
+draw and venue-derived environmental context."""
 
 from __future__ import annotations
 
@@ -14,13 +15,6 @@ from .core import TeamProfile
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 GROUPS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
-
-# Round-robin pairings by index within a group [t0, t1, t2, t3].
-_MATCHDAY_PAIRS = {
-    1: [(0, 1), (2, 3)],
-    2: [(0, 2), (3, 1)],
-    3: [(3, 0), (1, 2)],
-}
 
 
 @lru_cache(maxsize=1)
@@ -71,32 +65,28 @@ def get_draw() -> Dict[str, List[TeamProfile]]:
 
 @lru_cache(maxsize=1)
 def get_fixtures() -> List[dict]:
-    """All 72 group-stage fixtures with venue and environmental context."""
-    venue_data = load_venue_data()
-    clusters = venue_data["group_clusters"]
-    dates = venue_data["matchday_dates"]
+    """All 72 group-stage fixtures from the official schedule, enriched with
+    venue environmental context and host designation."""
+    raw = json.loads((DATA_DIR / "fixtures.json").read_text(encoding="utf-8"))
+    teams = load_teams()
     vmap = venues_by_id()
 
     fixtures: List[dict] = []
-    for group, teams in get_draw().items():
-        cluster = clusters[group]
-        match_no = 0
-        for matchday, pairs in _MATCHDAY_PAIRS.items():
-            for hi, ai in pairs:
-                home, away = teams[hi], teams[ai]
-                venue = vmap[cluster[match_no % len(cluster)]]
-                host = None
-                if home.is_host ^ away.is_host:
-                    host = home.name if home.is_host else away.name
-                fixtures.append({
-                    "id": f"{group}{match_no + 1}",
-                    "group": group,
-                    "matchday": matchday,
-                    "date": dates[str(matchday)],
-                    "home": home.name,
-                    "away": away.name,
-                    "home_team_host": host,
-                    "venue": venue,
-                })
-                match_no += 1
+    for row in raw["fixtures"]:
+        home, away = teams[row["home"]], teams[row["away"]]
+        host = None
+        if home.is_host ^ away.is_host:
+            host = home.name if home.is_host else away.name
+        fixtures.append({
+            "id": row["id"],
+            "group": row["group"],
+            "matchday": int(row["matchday"]),
+            "date": row["date"],
+            "home": home.name,
+            "away": away.name,
+            "home_team_host": host,
+            "venue": vmap[row["venue"]],
+        })
+    if len(fixtures) != 72:
+        raise ValueError(f"Expected 72 fixtures, found {len(fixtures)}.")
     return fixtures

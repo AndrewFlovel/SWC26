@@ -1,6 +1,11 @@
 """
 World Cup 2026 Predictive Pipeline
 ==================================
+NOTA: script de research congelado. El motor canonico vive en
+backend/app/engine (este archivo divergio: recent_form vs form_index).
+El scraping de DataGenerator fue portado a backend/app/services/scraper.py
+y el ajuste de metricas por resultados a backend/app/engine/adjuster.py.
+
 Pipeline de analitica futbolistica para estimar resultados del Mundial 2026.
 
 Arquitectura

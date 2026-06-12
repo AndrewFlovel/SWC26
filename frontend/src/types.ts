@@ -83,7 +83,57 @@ export interface GroupSimRow {
 export interface GroupSimResponse {
   group: string;
   n_sims: number;
+  played: number;
   table: GroupSimRow[];
+}
+
+export type ResultStatus = 'scheduled' | 'live' | 'final';
+
+export interface MatchResult {
+  fixture_id: string;
+  group: string;
+  matchday: number;
+  date: string;
+  home: string;
+  away: string;
+  goals_home: number | null;
+  goals_away: number | null;
+  status: ResultStatus;
+  source: 'manual' | 'scraped' | null;
+  updated_at: string | null;
+}
+
+export interface ResultIn {
+  goals_home: number;
+  goals_away: number;
+  status: 'live' | 'final';
+}
+
+export interface ScrapeEloUpdate {
+  team: string;
+  live_elo: number;
+  model_elo: number;
+  delta: number;
+}
+
+export interface ScrapeResponse {
+  status: 'ok' | 'fallback' | 'error';
+  fetched_at: string;
+  elo_updates: ScrapeEloUpdate[];
+  results_found: number;
+  messages: string[];
+}
+
+export interface AdjustedTeam {
+  team: string;
+  group: string;
+  base_elo: number;
+  adjusted_elo: number;
+  elo_delta: number;
+  base_form: number;
+  adjusted_form: number;
+  form_delta: number;
+  matches_played: number;
 }
 
 export const FLAGS: Record<string, string> = {

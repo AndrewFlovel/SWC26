@@ -1,0 +1,654 @@
+{
+  "source": "Official FIFA WC2026 schedule via en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_A..L, cross-checked with espn.com",
+  "retrieved": "2026-06-12",
+  "fixtures": [
+    {
+      "id": "A1",
+      "group": "A",
+      "matchday": 1,
+      "date": "2026-06-11",
+      "home": "Mexico",
+      "away": "South Africa",
+      "venue": "mexico_city"
+    },
+    {
+      "id": "A2",
+      "group": "A",
+      "matchday": 1,
+      "date": "2026-06-11",
+      "home": "South Korea",
+      "away": "Czechia",
+      "venue": "guadalajara"
+    },
+    {
+      "id": "A3",
+      "group": "A",
+      "matchday": 2,
+      "date": "2026-06-18",
+      "home": "Czechia",
+      "away": "South Africa",
+      "venue": "atlanta"
+    },
+    {
+      "id": "A4",
+      "group": "A",
+      "matchday": 2,
+      "date": "2026-06-18",
+      "home": "Mexico",
+      "away": "South Korea",
+      "venue": "guadalajara"
+    },
+    {
+      "id": "A5",
+      "group": "A",
+      "matchday": 3,
+      "date": "2026-06-24",
+      "home": "Czechia",
+      "away": "Mexico",
+      "venue": "mexico_city"
+    },
+    {
+      "id": "A6",
+      "group": "A",
+      "matchday": 3,
+      "date": "2026-06-24",
+      "home": "South Africa",
+      "away": "South Korea",
+      "venue": "monterrey"
+    },
+    {
+      "id": "B1",
+      "group": "B",
+      "matchday": 1,
+      "date": "2026-06-12",
+      "home": "Canada",
+      "away": "Bosnia and Herzegovina",
+      "venue": "toronto"
+    },
+    {
+      "id": "B2",
+      "group": "B",
+      "matchday": 1,
+      "date": "2026-06-13",
+      "home": "Qatar",
+      "away": "Switzerland",
+      "venue": "san_francisco"
+    },
+    {
+      "id": "B3",
+      "group": "B",
+      "matchday": 2,
+      "date": "2026-06-18",
+      "home": "Switzerland",
+      "away": "Bosnia and Herzegovina",
+      "venue": "los_angeles"
+    },
+    {
+      "id": "B4",
+      "group": "B",
+      "matchday": 2,
+      "date": "2026-06-18",
+      "home": "Canada",
+      "away": "Qatar",
+      "venue": "vancouver"
+    },
+    {
+      "id": "B5",
+      "group": "B",
+      "matchday": 3,
+      "date": "2026-06-24",
+      "home": "Switzerland",
+      "away": "Canada",
+      "venue": "vancouver"
+    },
+    {
+      "id": "B6",
+      "group": "B",
+      "matchday": 3,
+      "date": "2026-06-24",
+      "home": "Bosnia and Herzegovina",
+      "away": "Qatar",
+      "venue": "seattle"
+    },
+    {
+      "id": "C1",
+      "group": "C",
+      "matchday": 1,
+      "date": "2026-06-13",
+      "home": "Brazil",
+      "away": "Morocco",
+      "venue": "new_york"
+    },
+    {
+      "id": "C2",
+      "group": "C",
+      "matchday": 1,
+      "date": "2026-06-13",
+      "home": "Haiti",
+      "away": "Scotland",
+      "venue": "boston"
+    },
+    {
+      "id": "C3",
+      "group": "C",
+      "matchday": 2,
+      "date": "2026-06-19",
+      "home": "Scotland",
+      "away": "Morocco",
+      "venue": "boston"
+    },
+    {
+      "id": "C4",
+      "group": "C",
+      "matchday": 2,
+      "date": "2026-06-19",
+      "home": "Brazil",
+      "away": "Haiti",
+      "venue": "philadelphia"
+    },
+    {
+      "id": "C5",
+      "group": "C",
+      "matchday": 3,
+      "date": "2026-06-24",
+      "home": "Scotland",
+      "away": "Brazil",
+      "venue": "miami"
+    },
+    {
+      "id": "C6",
+      "group": "C",
+      "matchday": 3,
+      "date": "2026-06-24",
+      "home": "Morocco",
+      "away": "Haiti",
+      "venue": "atlanta"
+    },
+    {
+      "id": "D1",
+      "group": "D",
+      "matchday": 1,
+      "date": "2026-06-12",
+      "home": "United States",
+      "away": "Paraguay",
+      "venue": "los_angeles"
+    },
+    {
+      "id": "D2",
+      "group": "D",
+      "matchday": 1,
+      "date": "2026-06-13",
+      "home": "Australia",
+      "away": "Turkey",
+      "venue": "vancouver"
+    },
+    {
+      "id": "D3",
+      "group": "D",
+      "matchday": 2,
+      "date": "2026-06-19",
+      "home": "United States",
+      "away": "Australia",
+      "venue": "seattle"
+    },
+    {
+      "id": "D4",
+      "group": "D",
+      "matchday": 2,
+      "date": "2026-06-19",
+      "home": "Turkey",
+      "away": "Paraguay",
+      "venue": "san_francisco"
+    },
+    {
+      "id": "D5",
+      "group": "D",
+      "matchday": 3,
+      "date": "2026-06-25",
+      "home": "Turkey",
+      "away": "United States",
+      "venue": "los_angeles"
+    },
+    {
+      "id": "D6",
+      "group": "D",
+      "matchday": 3,
+      "date": "2026-06-25",
+      "home": "Paraguay",
+      "away": "Australia",
+      "venue": "san_francisco"
+    },
+    {
+      "id": "E1",
+      "group": "E",
+      "matchday": 1,
+      "date": "2026-06-14",
+      "home": "Germany",
+      "away": "Curacao",
+      "venue": "houston"
+    },
+    {
+      "id": "E2",
+      "group": "E",
+      "matchday": 1,
+      "date": "2026-06-14",
+      "home": "Ivory Coast",
+      "away": "Ecuador",
+      "venue": "philadelphia"
+    },
+    {
+      "id": "E3",
+      "group": "E",
+      "matchday": 2,
+      "date": "2026-06-20",
+      "home": "Germany",
+      "away": "Ivory Coast",
+      "venue": "toronto"
+    },
+    {
+      "id": "E4",
+      "group": "E",
+      "matchday": 2,
+      "date": "2026-06-20",
+      "home": "Ecuador",
+      "away": "Curacao",
+      "venue": "kansas_city"
+    },
+    {
+      "id": "E5",
+      "group": "E",
+      "matchday": 3,
+      "date": "2026-06-25",
+      "home": "Curacao",
+      "away": "Ivory Coast",
+      "venue": "philadelphia"
+    },
+    {
+      "id": "E6",
+      "group": "E",
+      "matchday": 3,
+      "date": "2026-06-25",
+      "home": "Ecuador",
+      "away": "Germany",
+      "venue": "new_york"
+    },
+    {
+      "id": "F1",
+      "group": "F",
+      "matchday": 1,
+      "date": "2026-06-14",
+      "home": "Netherlands",
+      "away": "Japan",
+      "venue": "dallas"
+    },
+    {
+      "id": "F2",
+      "group": "F",
+      "matchday": 1,
+      "date": "2026-06-14",
+      "home": "Sweden",
+      "away": "Tunisia",
+      "venue": "monterrey"
+    },
+    {
+      "id": "F3",
+      "group": "F",
+      "matchday": 2,
+      "date": "2026-06-20",
+      "home": "Netherlands",
+      "away": "Sweden",
+      "venue": "houston"
+    },
+    {
+      "id": "F4",
+      "group": "F",
+      "matchday": 2,
+      "date": "2026-06-20",
+      "home": "Tunisia",
+      "away": "Japan",
+      "venue": "monterrey"
+    },
+    {
+      "id": "F5",
+      "group": "F",
+      "matchday": 3,
+      "date": "2026-06-25",
+      "home": "Japan",
+      "away": "Sweden",
+      "venue": "dallas"
+    },
+    {
+      "id": "F6",
+      "group": "F",
+      "matchday": 3,
+      "date": "2026-06-25",
+      "home": "Tunisia",
+      "away": "Netherlands",
+      "venue": "kansas_city"
+    },
+    {
+      "id": "G1",
+      "group": "G",
+      "matchday": 1,
+      "date": "2026-06-15",
+      "home": "Iran",
+      "away": "New Zealand",
+      "venue": "los_angeles"
+    },
+    {
+      "id": "G2",
+      "group": "G",
+      "matchday": 1,
+      "date": "2026-06-15",
+      "home": "Belgium",
+      "away": "Egypt",
+      "venue": "seattle"
+    },
+    {
+      "id": "G3",
+      "group": "G",
+      "matchday": 2,
+      "date": "2026-06-21",
+      "home": "Belgium",
+      "away": "Iran",
+      "venue": "los_angeles"
+    },
+    {
+      "id": "G4",
+      "group": "G",
+      "matchday": 2,
+      "date": "2026-06-21",
+      "home": "New Zealand",
+      "away": "Egypt",
+      "venue": "vancouver"
+    },
+    {
+      "id": "G5",
+      "group": "G",
+      "matchday": 3,
+      "date": "2026-06-26",
+      "home": "Egypt",
+      "away": "Iran",
+      "venue": "seattle"
+    },
+    {
+      "id": "G6",
+      "group": "G",
+      "matchday": 3,
+      "date": "2026-06-26",
+      "home": "New Zealand",
+      "away": "Belgium",
+      "venue": "vancouver"
+    },
+    {
+      "id": "H1",
+      "group": "H",
+      "matchday": 1,
+      "date": "2026-06-15",
+      "home": "Spain",
+      "away": "Cape Verde",
+      "venue": "atlanta"
+    },
+    {
+      "id": "H2",
+      "group": "H",
+      "matchday": 1,
+      "date": "2026-06-15",
+      "home": "Saudi Arabia",
+      "away": "Uruguay",
+      "venue": "miami"
+    },
+    {
+      "id": "H3",
+      "group": "H",
+      "matchday": 2,
+      "date": "2026-06-21",
+      "home": "Spain",
+      "away": "Saudi Arabia",
+      "venue": "atlanta"
+    },
+    {
+      "id": "H4",
+      "group": "H",
+      "matchday": 2,
+      "date": "2026-06-21",
+      "home": "Uruguay",
+      "away": "Cape Verde",
+      "venue": "miami"
+    },
+    {
+      "id": "H5",
+      "group": "H",
+      "matchday": 3,
+      "date": "2026-06-26",
+      "home": "Cape Verde",
+      "away": "Saudi Arabia",
+      "venue": "houston"
+    },
+    {
+      "id": "H6",
+      "group": "H",
+      "matchday": 3,
+      "date": "2026-06-26",
+      "home": "Uruguay",
+      "away": "Spain",
+      "venue": "guadalajara"
+    },
+    {
+      "id": "I1",
+      "group": "I",
+      "matchday": 1,
+      "date": "2026-06-16",
+      "home": "France",
+      "away": "Senegal",
+      "venue": "new_york"
+    },
+    {
+      "id": "I2",
+      "group": "I",
+      "matchday": 1,
+      "date": "2026-06-16",
+      "home": "Iraq",
+      "away": "Norway",
+      "venue": "boston"
+    },
+    {
+      "id": "I3",
+      "group": "I",
+      "matchday": 2,
+      "date": "2026-06-22",
+      "home": "France",
+      "away": "Iraq",
+      "venue": "philadelphia"
+    },
+    {
+      "id": "I4",
+      "group": "I",
+      "matchday": 2,
+      "date": "2026-06-22",
+      "home": "Norway",
+      "away": "Senegal",
+      "venue": "new_york"
+    },
+    {
+      "id": "I5",
+      "group": "I",
+      "matchday": 3,
+      "date": "2026-06-26",
+      "home": "Norway",
+      "away": "France",
+      "venue": "boston"
+    },
+    {
+      "id": "I6",
+      "group": "I",
+      "matchday": 3,
+      "date": "2026-06-26",
+      "home": "Senegal",
+      "away": "Iraq",
+      "venue": "toronto"
+    },
+    {
+      "id": "J1",
+      "group": "J",
+      "matchday": 1,
+      "date": "2026-06-16",
+      "home": "Argentina",
+      "away": "Algeria",
+      "venue": "kansas_city"
+    },
+    {
+      "id": "J2",
+      "group": "J",
+      "matchday": 1,
+      "date": "2026-06-16",
+      "home": "Austria",
+      "away": "Jordan",
+      "venue": "san_francisco"
+    },
+    {
+      "id": "J3",
+      "group": "J",
+      "matchday": 2,
+      "date": "2026-06-22",
+      "home": "Argentina",
+      "away": "Austria",
+      "venue": "dallas"
+    },
+    {
+      "id": "J4",
+      "group": "J",
+      "matchday": 2,
+      "date": "2026-06-22",
+      "home": "Jordan",
+      "away": "Algeria",
+      "venue": "san_francisco"
+    },
+    {
+      "id": "J5",
+      "group": "J",
+      "matchday": 3,
+      "date": "2026-06-27",
+      "home": "Algeria",
+      "away": "Austria",
+      "venue": "kansas_city"
+    },
+    {
+      "id": "J6",
+      "group": "J",
+      "matchday": 3,
+      "date": "2026-06-27",
+      "home": "Jordan",
+      "away": "Argentina",
+      "venue": "dallas"
+    },
+    {
+      "id": "K1",
+      "group": "K",
+      "matchday": 1,
+      "date": "2026-06-17",
+      "home": "Portugal",
+      "away": "DR Congo",
+      "venue": "houston"
+    },
+    {
+      "id": "K2",
+      "group": "K",
+      "matchday": 1,
+      "date": "2026-06-17",
+      "home": "Uzbekistan",
+      "away": "Colombia",
+      "venue": "mexico_city"
+    },
+    {
+      "id": "K3",
+      "group": "K",
+      "matchday": 2,
+      "date": "2026-06-23",
+      "home": "Portugal",
+      "away": "Uzbekistan",
+      "venue": "houston"
+    },
+    {
+      "id": "K4",
+      "group": "K",
+      "matchday": 2,
+      "date": "2026-06-23",
+      "home": "Colombia",
+      "away": "DR Congo",
+      "venue": "guadalajara"
+    },
+    {
+      "id": "K5",
+      "group": "K",
+      "matchday": 3,
+      "date": "2026-06-27",
+      "home": "Colombia",
+      "away": "Portugal",
+      "venue": "miami"
+    },
+    {
+      "id": "K6",
+      "group": "K",
+      "matchday": 3,
+      "date": "2026-06-27",
+      "home": "DR Congo",
+      "away": "Uzbekistan",
+      "venue": "atlanta"
+    },
+    {
+      "id": "L1",
+      "group": "L",
+      "matchday": 1,
+      "date": "2026-06-17",
+      "home": "England",
+      "away": "Croatia",
+      "venue": "dallas"
+    },
+    {
+      "id": "L2",
+      "group": "L",
+      "matchday": 1,
+      "date": "2026-06-17",
+      "home": "Ghana",
+      "away": "Panama",
+      "venue": "toronto"
+    },
+    {
+      "id": "L3",
+      "group": "L",
+      "matchday": 2,
+      "date": "2026-06-23",
+      "home": "England",
+      "away": "Ghana",
+      "venue": "boston"
+    },
+    {
+      "id": "L4",
+      "group": "L",
+      "matchday": 2,
+      "date": "2026-06-23",
+      "home": "Panama",
+      "away": "Croatia",
+      "venue": "toronto"
+    },
+    {
+      "id": "L5",
+      "group": "L",
+      "matchday": 3,
+      "date": "2026-06-27",
+      "home": "Panama",
+      "away": "England",
+      "venue": "new_york"
+    },
+    {
+      "id": "L6",
+      "group": "L",
+      "matchday": 3,
+      "date": "2026-06-27",
+      "home": "Croatia",
+      "away": "Ghana",
+      "venue": "philadelphia"
+    }
+  ]
+}

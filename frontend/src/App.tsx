@@ -4,6 +4,7 @@ import GroupTable from './components/GroupTable';
 import LanguageSelector from './components/LanguageSelector';
 import MatchAnalysis from './components/MatchAnalysis';
 import MatchList from './components/MatchList';
+import ResultsControl from './components/ResultsControl';
 import { useI18n } from './i18n';
 import HeroScene from './three/HeroScene';
 import type { Fixture, Team } from './types';
@@ -16,6 +17,7 @@ export default function App() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [group, setGroup] = useState('A');
   const [selected, setSelected] = useState<Fixture | null>(null);
+  const [view, setView] = useState<'analysis' | 'results'>('analysis');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,25 +55,48 @@ export default function App() {
           <div className="error-box">{t('engineUnreachable', { msg: error })}</div>
         )}
 
-        <h2 className="section-title">{t('sectionGroups')}</h2>
-        <div className="group-chips">
-          {GROUPS.map((g) => (
-            <button
-              type="button"
-              key={g}
-              className={`chip ${g === group ? 'active' : ''}`}
-              onClick={() => setGroup(g)}
-            >
-              {g}
-            </button>
-          ))}
+        <div className="view-tabs">
+          <button
+            type="button"
+            className={view === 'analysis' ? 'on' : ''}
+            onClick={() => setView('analysis')}
+          >
+            {t('navAnalysis')}
+          </button>
+          <button
+            type="button"
+            className={view === 'results' ? 'on' : ''}
+            onClick={() => setView('results')}
+          >
+            {t('navResults')}
+          </button>
         </div>
 
-        <h2 className="section-title">{t('sectionMatches', { g: group })}</h2>
-        <MatchList fixtures={groupFixtures} onSelect={setSelected} />
+        {view === 'analysis' ? (
+          <>
+            <h2 className="section-title">{t('sectionGroups')}</h2>
+            <div className="group-chips">
+              {GROUPS.map((g) => (
+                <button
+                  type="button"
+                  key={g}
+                  className={`chip ${g === group ? 'active' : ''}`}
+                  onClick={() => setGroup(g)}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
 
-        <h2 className="section-title">{t('sectionOdds')}</h2>
-        <GroupTable group={group} />
+            <h2 className="section-title">{t('sectionMatches', { g: group })}</h2>
+            <MatchList fixtures={groupFixtures} onSelect={setSelected} />
+
+            <h2 className="section-title">{t('sectionOdds')}</h2>
+            <GroupTable group={group} />
+          </>
+        ) : (
+          <ResultsControl />
+        )}
 
         <div className="footnote">
           <b>SWC26</b> · {t('footnote')}

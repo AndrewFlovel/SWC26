@@ -1,0 +1,16 @@
+{
+  "A1": {
+    "goals_away": 0,
+    "goals_home": 2,
+    "source": "manual",
+    "status": "final",
+    "updated_at": "2026-06-12T19:26:09.773866+00:00"
+  },
+  "A2": {
+    "goals_away": 1,
+    "goals_home": 2,
+    "source": "manual",
+    "status": "final",
+    "updated_at": "2026-06-12T16:02:29.162923+00:00"
+  }
+}

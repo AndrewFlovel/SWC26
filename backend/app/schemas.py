@@ -86,6 +86,10 @@ class PredictResponse(BaseModel):
 class GroupSimRequest(BaseModel):
     group: str = Field(pattern="^[A-L]$")
     n_sims: int = Field(default=5000, ge=100, le=20000)
+    use_results: bool = Field(
+        default=True,
+        description="Condition the simulation on recorded final results.",
+    )
 
 
 class GroupSimRow(BaseModel):
@@ -100,7 +104,55 @@ class GroupSimRow(BaseModel):
 class GroupSimResponse(BaseModel):
     group: str
     n_sims: int
+    played: int = 0
     table: List[GroupSimRow]
+
+
+class ResultIn(BaseModel):
+    goals_home: int = Field(ge=0, le=20)
+    goals_away: int = Field(ge=0, le=20)
+    status: str = Field(default="final", pattern="^(live|final)$")
+
+
+class ResultOut(BaseModel):
+    fixture_id: str
+    group: str
+    matchday: int
+    date: str
+    home: str
+    away: str
+    goals_home: Optional[int] = None
+    goals_away: Optional[int] = None
+    status: str = "scheduled"
+    source: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class ScrapeEloUpdate(BaseModel):
+    team: str
+    live_elo: float
+    model_elo: float
+    delta: float
+
+
+class ScrapeResponse(BaseModel):
+    status: str
+    fetched_at: str
+    elo_updates: List[ScrapeEloUpdate]
+    results_found: int
+    messages: List[str]
+
+
+class AdjustedTeamOut(BaseModel):
+    team: str
+    group: str
+    base_elo: float
+    adjusted_elo: float
+    elo_delta: float
+    base_form: float
+    adjusted_form: float
+    form_delta: float
+    matches_played: int
 
 
 class TournamentSimRequest(BaseModel):

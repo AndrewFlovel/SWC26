@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
+  AdjustedTeam,
   Fixture,
   GroupEntry,
   GroupSimResponse,
+  MatchResult,
   PredictRequest,
   Prediction,
+  ResultIn,
+  ScrapeResponse,
   Team,
 } from '../types';
 
@@ -45,6 +49,23 @@ export const fetchGroupSim = (group: string, nSims = 3000) =>
     method: 'POST',
     body: JSON.stringify({ group, n_sims: nSims }),
   });
+
+export const fetchResults = () => request<MatchResult[]>('/api/results');
+
+export const saveResult = (fixtureId: string, body: ResultIn) =>
+  request<MatchResult>(`/api/results/${fixtureId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+
+export const deleteResult = (fixtureId: string) =>
+  request<{ status: string }>(`/api/results/${fixtureId}`, { method: 'DELETE' });
+
+export const triggerScrape = () =>
+  request<ScrapeResponse>('/api/scrape/refresh', { method: 'POST' });
+
+export const fetchAdjustedMetrics = () =>
+  request<AdjustedTeam[]>('/api/metrics/adjusted');
 
 /**
  * Debounced, race-safe live prediction hook. Re-runs 250ms after the last
