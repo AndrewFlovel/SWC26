@@ -12,6 +12,7 @@ interface Props {
   fixture: Fixture;
   teams: Record<string, Team>;
   onClose: () => void;
+  onDeepAnalyze: () => void;
 }
 
 interface SliderProps {
@@ -47,7 +48,7 @@ function Slider({ label, value, min, max, step, format, onChange }: SliderProps)
 
 type Advantage = 'none' | 'home' | 'away';
 
-export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
+export default function MatchAnalysis({ fixture, teams, onClose, onDeepAnalyze }: Props) {
   const { t } = useI18n();
   const homeTeam = teams[fixture.home];
   const awayTeam = teams[fixture.away];
@@ -110,9 +111,14 @@ export default function MatchAnalysis({ fixture, teams, onClose }: Props) {
               {flag(fixture.away)} {fixture.away}
               {loading && <span className="loading-pulse" />}
             </h2>
-            <button type="button" className="close" onClick={onClose} aria-label={t('close')}>
-              ✕
-            </button>
+            <div className="analysis-head-actions">
+              <button type="button" className="deep-link" onClick={onDeepAnalyze}>
+                {t('deepAnalysis')}
+              </button>
+              <button type="button" className="close" onClick={onClose} aria-label={t('close')}>
+                ✕
+              </button>
+            </div>
           </div>
           <div className="analysis-sub">
             {fixture.venue.stadium}, {fixture.venue.city} · {t('matchday')}{' '}

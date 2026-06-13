@@ -8,6 +8,16 @@ blended with xG/xGA tactical profiles, form momentum, injury attrition and
 from .adjuster import AdjustmentConfig, apply_results, elo_delta, update_form
 from .config import ModelConfig
 from .core import MatchContext, ParameterOverrides, TeamProfile, compute_lambdas
+from .lineup_analyzer import (
+    analyze_lineups,
+    build_lineup,
+    formation_strength_index,
+    optimal_xi,
+    positional_battles,
+    pressing_intensity,
+)
+from .player_models import FORMATIONS, POSITIONS, PlayerProfile, Slot
+from .player_scorer import player_performance_score, score_squad
 from .predictor import EloPoissonModel, MatchPredictor, MatchPrediction
 from .simulator import MonteCarloSimulator, TournamentSimulator
 
@@ -26,4 +36,17 @@ __all__ = [
     "MatchPrediction",
     "MonteCarloSimulator",
     "TournamentSimulator",
+    # Player analyzer
+    "PlayerProfile",
+    "Slot",
+    "POSITIONS",
+    "FORMATIONS",
+    "player_performance_score",
+    "score_squad",
+    "build_lineup",
+    "analyze_lineups",
+    "formation_strength_index",
+    "positional_battles",
+    "pressing_intensity",
+    "optimal_xi",
 ]

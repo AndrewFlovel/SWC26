@@ -85,7 +85,7 @@ cd backend
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Resultado esperado: `13 passed`.
+Resultado esperado: `56 passed` (motor predictivo, seguimiento de resultados y analizador de jugadores).
 
 ### 4. Build de producción del frontend (opcional)
 
@@ -107,7 +107,14 @@ npm run preview    # sirve el bundle de producción localmente
    xG/Elo, ventaja de anfitrión. Cada cambio dispara una nueva predicción con
    debounce (~250 ms): las barras de victoria/empate/derrota, los marcadores más
    probables y el mapa de calor de marcador exacto se actualizan en vivo.
-4. **Cambia el idioma** (EN/ES/PT) con el selector de arriba a la derecha. La
+4. **Abre un análisis de jugadores** con el botón "⚔ Análisis de jugadores" del modal
+   de partido. La superposición scrapea ambas plantillas (con respaldo semilla) y
+   muestra tarjetas de jugador con su Player Performance Score, un campo SVG con un
+   mapa de dominio 3×3, la tabla de duelos posicionales y un optimizador del mejor
+   once. Se incluyen plantillas semilla para España, Uruguay, Argentina y Austria
+   (prueba Uruguay vs España en el Grupo H, o Argentina vs Austria en el Grupo J);
+   el resto de partidos muestra un aviso de "sin datos de plantilla".
+5. **Cambia el idioma** (EN/ES/PT) con el selector de arriba a la derecha. La
    elección se guarda en `localStorage`; en la primera visita se detecta
    automáticamente el idioma del navegador.
 

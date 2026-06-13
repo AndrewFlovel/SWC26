@@ -172,3 +172,126 @@ class TournamentSimRow(BaseModel):
 class TournamentSimResponse(BaseModel):
     n_sims: int
     table: List[TournamentSimRow]
+
+
+# --------------------------------------------------------------------------- #
+# Per-game player analyzer
+# --------------------------------------------------------------------------- #
+
+class PlayerOut(BaseModel):
+    name: str
+    team: str
+    position: str
+    position_group: str
+    age: int
+    caps: int
+    international_goals: int
+    club: str
+    xg90: float
+    xa90: float
+    shots90: float
+    progressive_passes90: float
+    shot_creating_actions90: float
+    dribbles_completed90: float
+    tackles_won_pct: float
+    interceptions90: float
+    clearances90: float
+    pressures90: float
+    pressures_won_pct: float
+    aerial_won_pct: float
+    minutes_played: int
+    is_starter: bool
+    injury_flag: bool
+    pps: float
+
+
+class PlayerScrapeRequest(BaseModel):
+    fixture_id: str
+    live: bool = Field(
+        default=True,
+        description="Attempt a live FBref scrape; falls back to seed/cache on failure.",
+    )
+
+
+class TeamSquadOut(BaseModel):
+    team: str
+    slug: str
+    source: str           # "scraped" | "cached" | "seed" | "unavailable"
+    players: List[PlayerOut]
+
+
+class PlayerSquadResponse(BaseModel):
+    fixture_id: str
+    home: TeamSquadOut
+    away: TeamSquadOut
+    scraped_at: str
+    messages: List[str]
+
+
+class LineupAnalysisRequest(BaseModel):
+    home_team: str
+    away_team: str
+    home_formation: str
+    away_formation: str
+    home_lineup: List[str] = Field(min_length=11, max_length=11)
+    away_lineup: List[str] = Field(min_length=11, max_length=11)
+
+
+class PositionalBattleOut(BaseModel):
+    side: str
+    attacker: str
+    attacker_position: str
+    attacker_pps: float
+    defender: Optional[str] = None
+    defender_position: Optional[str] = None
+    defender_pps: Optional[float] = None
+    pms: float
+    favored: str
+
+
+class LineupAnalysisResponse(BaseModel):
+    fsi: float
+    home_index: float
+    away_index: float
+    pis_home: float
+    pis_away: float
+    positional_battles: List[PositionalBattleOut]
+    dominance_heatmap: List[List[float]]
+
+
+class OptimalXiRequest(BaseModel):
+    team: str
+    formation: str
+    # Opponent is optional: when omitted, the best XI is found against a neutral
+    # opponent (FSI ~ 0.5). Provide all three to optimize against a real XI.
+    opponent_team: Optional[str] = None
+    opponent_formation: Optional[str] = None
+    opponent_lineup: Optional[List[str]] = Field(default=None, min_length=11, max_length=11)
+    top_n: int = Field(default=3, ge=1, le=5)
+
+
+class FormationSlotOut(BaseModel):
+    slot: str
+    position: str
+    x: float
+    y: float
+
+
+class XiSlotOut(BaseModel):
+    slot: str
+    position: str
+    player: str
+    pps: float
+
+
+class XiCandidate(BaseModel):
+    formation: str
+    fsi: float
+    pis: float
+    lineup: List[XiSlotOut]
+
+
+class OptimalXiResponse(BaseModel):
+    team: str
+    opponent_team: str
+    candidates: List[XiCandidate]

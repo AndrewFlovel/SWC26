@@ -85,7 +85,7 @@ cd backend
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Expected: `13 passed`.
+Expected: `56 passed` (prediction engine, results tracking and player analyzer).
 
 ### 4. Production build of the frontend (optional)
 
@@ -106,7 +106,14 @@ npm run preview    # serves the production bundle locally
    host advantage. Every change triggers a debounced re-prediction (~250 ms):
    win/draw/loss bars, the most probable scorelines and the exact-score heatmap
    update live.
-4. **Switch language** (EN/ES/PT) with the selector at the top right. The choice
+4. **Open a deep player analysis** with the "⚔ Deep player analysis" button in the
+   match modal. The overlay scrapes both squads (with a seed fallback) and surfaces
+   squad cards with Player Performance Scores, an SVG formation pitch with a 3×3
+   dominance heatmap, the positional-battles table, and a best-XI optimizer. Seed
+   squads are bundled for Spain, Uruguay, Argentina and Austria (try Uruguay vs Spain
+   in Group H, or Argentina vs Austria in Group J); other fixtures show a graceful
+   "no squad data" notice.
+5. **Switch language** (EN/ES/PT) with the selector at the top right. The choice
    persists in `localStorage`; the first visit auto-detects the browser language.
 
 ## Troubleshooting
