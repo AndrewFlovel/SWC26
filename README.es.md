@@ -8,8 +8,10 @@ clasificadas: ratings Elo, perfiles tácticos xG/xGA, momento de forma, desgaste
 lesiones, carga de viajes transcontinentales, hipoxia de altitud y estrés térmico WBGT.
 
 Oscura, rojo sangre, impulsada por WebGL. Mueve los controles deslizantes: el motor
-recalcula en tiempo real. La interfaz está disponible en **inglés, español y portugués**
-(selector arriba a la derecha; también detecta automáticamente el idioma del navegador).
+recalcula en tiempo real. Abre cualquier partido para un desglose jugador por jugador:
+valoraciones de plantilla, enfrentamientos de formación y un optimizador del mejor once.
+La interfaz está disponible en **inglés, español y portugués** (selector arriba a la
+derecha; también detecta automáticamente el idioma del navegador).
 
 ## Inicio rápido (Docker)
 
@@ -45,6 +47,43 @@ completos y la regla de los 8 mejores terceros. Se incluye un calibrador de
 máxima verosimilitud con decaimiento temporal estilo Dixon-Coles
 (`backend/app/engine/calibration.py`).
 
+## Analizador de jugadores por partido
+
+Más allá del modelo a nivel de selección, cualquier partido puede abrirse para un
+desglose **jugador por jugador**. Al seleccionar un encuentro se dispara un scraping
+híbrido de plantillas — `requests` contra las tablas de FBref (renderizadas en el
+servidor), con plantillas semilla incluidas como respaldo fiable (Selenium queda
+reservado para las alineaciones confirmadas del día del partido). Cada jugador recibe
+un **Player Performance Score (PPS)**: una mezcla ponderada por rol de facetas
+ofensivas, defensivas y físicas, cada una normalizada contra rangos de referencia
+fijos del fútbol de élite, de modo que los puntajes son absolutos y comparables entre
+plantillas.
+
+A partir de dos onces el motor deriva el enfrentamiento de forma geométrica — funciona
+con cualquier par de formaciones, sin tablas codificadas a mano:
+
+- **PMS** — puntajes de duelo posicional (cada atacante contra los defensores que lo marcan)
+- **FSI** — un único Índice de Fuerza de Formación, simétrico, para el enfrentamiento
+- **PIS** — desajuste de presión vs progresión de balón entre los equipos
+- **PDH** — un mapa de calor de dominio territorial de 3×3
+- **Once óptimo** — la mejor alineación para una formación frente a un rival dado,
+  mediante la asignación húngara (`scipy.optimize.linear_sum_assignment`), con
+  alternativas ordenadas
+
+La interfaz abre una superposición a pantalla completa (Plantilla · Formación · Duelos ·
+Optimizador) con un campo SVG, nodos de jugador coloreados por PPS y el mapa de dominio.
+Se incluyen plantillas semilla para España, Uruguay, Argentina y Austria (partidos
+Uruguay–España y Argentina–Austria); el resto de partidos degrada con elegancia hasta
+que sus plantillas se scrapeen o se sembren.
+
+| Método | Ruta | Propósito |
+| --- | --- | --- |
+| GET | `/api/players/{slug}` | Plantilla con PPS de una selección — semilla o scrapeada |
+| POST | `/api/scrape/players` | Scrapea ambas plantillas de un partido (FBref, respaldo semilla) |
+| POST | `/api/analyze/lineup` | FSI, presión, duelos posicionales y mapa de dominio 3×3 de dos onces |
+| POST | `/api/analyze/optimal-xi` | Mejor once (húngaro) frente a un rival — top-3 candidatos |
+| GET | `/api/formations` | Coordenadas de las posiciones por formación (4-3-3, 4-2-3-1, 4-4-2, 3-5-2) |
+
 ## API
 
 | Método | Ruta | Propósito |
@@ -63,12 +102,19 @@ Documentación OpenAPI interactiva en `http://localhost:8001/docs`.
 ```
 docker-compose.yml     Despliegue con un solo comando (frontend + backend)
 backend/app/engine/    Motor predictivo (config, núcleo matemático, predictor,
-                       simuladores Monte Carlo, calibración MLE, capa de datos)
-backend/app/data/      Dataset de 48 selecciones + catálogo de 16 sedes (junio 2026)
-backend/tests/         Tests de integridad del motor y de la API
+                       simuladores Monte Carlo, calibración MLE, capa de datos) +
+                       analizador de jugadores (modelos de jugador, scorer PPS,
+                       analizador de alineación/FSI/once-óptimo)
+backend/app/services/  Almacén de resultados + replay de métricas, scraper del día,
+                       y la caché de plantillas + scraper híbrido de jugadores (FBref)
+backend/app/data/      Dataset de 48 selecciones + catálogo de 16 sedes; data/players/
+                       guarda plantillas semilla (España, Uruguay, Argentina, Austria)
+backend/tests/         Tests del motor, de resultados y del analizador de jugadores
 frontend/src/i18n.tsx  Traducciones EN/ES/PT + contexto de idioma
 frontend/src/three/    Escena 3D temática de sangre con React Three Fiber
-frontend/src/components/  Dashboard, tablas de grupos, análisis interactivo
+frontend/src/components/  Dashboard, tablas de grupos, análisis interactivo, y el
+                       analizador de jugadores (tarjetas de plantilla, campo SVG +
+                       mapa de calor, duelos posicionales, optimizador de alineación)
 research.md            Documento fuente de investigación profunda
 monteCarlo.py          Pipeline predictivo original de un solo archivo (referencia)
 ```

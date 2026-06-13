@@ -4,6 +4,7 @@ import GroupTable from './components/GroupTable';
 import LanguageSelector from './components/LanguageSelector';
 import MatchAnalysis from './components/MatchAnalysis';
 import MatchList from './components/MatchList';
+import PlayerAnalysis from './components/PlayerAnalysis';
 import ResultsControl from './components/ResultsControl';
 import { useI18n } from './i18n';
 import HeroScene from './three/HeroScene';
@@ -17,6 +18,7 @@ export default function App() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [group, setGroup] = useState('A');
   const [selected, setSelected] = useState<Fixture | null>(null);
+  const [deepFixture, setDeepFixture] = useState<Fixture | null>(null);
   const [view, setView] = useState<'analysis' | 'results'>('analysis');
   const [error, setError] = useState<string | null>(null);
 
@@ -108,6 +110,17 @@ export default function App() {
           fixture={selected}
           teams={teams}
           onClose={() => setSelected(null)}
+          onDeepAnalyze={() => {
+            setDeepFixture(selected);
+            setSelected(null);
+          }}
+        />
+      )}
+
+      {deepFixture && (
+        <PlayerAnalysis
+          fixture={deepFixture}
+          onClose={() => setDeepFixture(null)}
         />
       )}
     </>

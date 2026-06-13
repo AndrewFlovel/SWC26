@@ -2,14 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import type {
   AdjustedTeam,
   Fixture,
+  FormationMap,
   GroupEntry,
   GroupSimResponse,
+  LineupAnalysis,
   MatchResult,
+  OptimalXiResponse,
+  PlayerSquadResponse,
   PredictRequest,
   Prediction,
   ResultIn,
   ScrapeResponse,
   Team,
+  TeamSquad,
 } from '../types';
 
 export const API_BASE =
@@ -66,6 +71,49 @@ export const triggerScrape = () =>
 
 export const fetchAdjustedMetrics = () =>
   request<AdjustedTeam[]>('/api/metrics/adjusted');
+
+// ---- Per-game player analyzer ---------------------------------------------
+
+export const scrapePlayers = (fixtureId: string, live = true) =>
+  request<PlayerSquadResponse>('/api/scrape/players', {
+    method: 'POST',
+    body: JSON.stringify({ fixture_id: fixtureId, live }),
+  });
+
+export const fetchTeamPlayers = (slug: string) =>
+  request<TeamSquad>(`/api/players/${slug}`);
+
+export interface LineupAnalysisBody {
+  home_team: string;
+  away_team: string;
+  home_formation: string;
+  away_formation: string;
+  home_lineup: string[];
+  away_lineup: string[];
+}
+
+export const analyzeLineup = (body: LineupAnalysisBody) =>
+  request<LineupAnalysis>('/api/analyze/lineup', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+export interface OptimalXiBody {
+  team: string;
+  formation: string;
+  opponent_team?: string;
+  opponent_formation?: string;
+  opponent_lineup?: string[];
+  top_n?: number;
+}
+
+export const fetchOptimalXi = (body: OptimalXiBody) =>
+  request<OptimalXiResponse>('/api/analyze/optimal-xi', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+export const fetchFormations = () => request<FormationMap>('/api/formations');
 
 /**
  * Debounced, race-safe live prediction hook. Re-runs 250ms after the last

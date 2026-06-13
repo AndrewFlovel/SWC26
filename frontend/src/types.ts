@@ -188,3 +188,121 @@ export const FLAGS: Record<string, string> = {
 };
 
 export const flag = (name: string): string => FLAGS[name] ?? '🏳️';
+
+// --------------------------------------------------------------------------- //
+// Per-game player analyzer
+// --------------------------------------------------------------------------- //
+
+export interface Player {
+  name: string;
+  team: string;
+  position: string;
+  position_group: string;
+  age: number;
+  caps: number;
+  international_goals: number;
+  club: string;
+  xg90: number;
+  xa90: number;
+  shots90: number;
+  progressive_passes90: number;
+  shot_creating_actions90: number;
+  dribbles_completed90: number;
+  tackles_won_pct: number;
+  interceptions90: number;
+  clearances90: number;
+  pressures90: number;
+  pressures_won_pct: number;
+  aerial_won_pct: number;
+  minutes_played: number;
+  is_starter: boolean;
+  injury_flag: boolean;
+  pps: number;
+}
+
+export type SquadSource = 'scraped' | 'cached' | 'seed' | 'unavailable';
+
+export interface TeamSquad {
+  team: string;
+  slug: string;
+  source: SquadSource;
+  players: Player[];
+}
+
+export interface PlayerSquadResponse {
+  fixture_id: string;
+  home: TeamSquad;
+  away: TeamSquad;
+  scraped_at: string;
+  messages: string[];
+}
+
+export interface PositionalBattle {
+  side: 'home' | 'away';
+  attacker: string;
+  attacker_position: string;
+  attacker_pps: number;
+  defender: string | null;
+  defender_position: string | null;
+  defender_pps: number | null;
+  pms: number;
+  favored: 'home' | 'away';
+}
+
+export interface LineupAnalysis {
+  fsi: number;
+  home_index: number;
+  away_index: number;
+  pis_home: number;
+  pis_away: number;
+  positional_battles: PositionalBattle[];
+  dominance_heatmap: number[][];
+}
+
+export interface XiSlot {
+  slot: string;
+  position: string;
+  player: string;
+  pps: number;
+}
+
+export interface XiCandidate {
+  formation: string;
+  fsi: number;
+  pis: number;
+  lineup: XiSlot[];
+}
+
+export interface OptimalXiResponse {
+  team: string;
+  opponent_team: string;
+  candidates: XiCandidate[];
+}
+
+export interface FormationSlot {
+  slot: string;
+  position: string;
+  x: number;
+  y: number;
+}
+
+export type FormationMap = Record<string, FormationSlot[]>;
+
+export const FORMATION_NAMES = ['4-3-3', '4-2-3-1', '4-4-2', '3-5-2'] as const;
+export type FormationName = (typeof FORMATION_NAMES)[number];
+
+/** Mirror of the backend `team_slug` (lowercase, spaces → hyphens). */
+export const teamSlug = (name: string): string =>
+  name.trim().toLowerCase().replace(/\s+/g, '-');
+
+/** Green (strong) → gold → blood (weak) for a Player Performance Score. */
+export const ppsColor = (pps: number): string =>
+  pps >= 0.66 ? '#7ddf8f' : pps >= 0.33 ? '#e8c547' : '#ff7b5f';
+
+/** Position-group accent colors for chips. */
+export const POSITION_GROUP_COLOR: Record<string, string> = {
+  GK: '#e8c547',
+  DEF: '#5fa8ff',
+  MID: '#7ddf8f',
+  ATT: '#ff7b5f',
+};

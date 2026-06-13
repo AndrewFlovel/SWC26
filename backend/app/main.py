@@ -7,6 +7,7 @@ Run with:
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,14 +19,25 @@ from .engine import (
     MonteCarloSimulator,
     ParameterOverrides,
     TournamentSimulator,
+    analyze_lineups,
+    build_lineup,
+    optimal_xi,
 )
+from .engine.player_models import FORMATIONS
 from .engine.loader import GROUPS, get_fixtures, load_teams
 from .schemas import (
     AdjustedTeamOut,
     FixtureOut,
     GroupOut,
+    FormationSlotOut,
     GroupSimRequest,
     GroupSimResponse,
+    LineupAnalysisRequest,
+    LineupAnalysisResponse,
+    OptimalXiRequest,
+    OptimalXiResponse,
+    PlayerScrapeRequest,
+    PlayerSquadResponse,
     PredictRequest,
     PredictResponse,
     ResultIn,
@@ -36,8 +48,9 @@ from .schemas import (
     TournamentSimRequest,
     TournamentSimResponse,
 )
-from .services import scraper
+from .services import player_scraper, scraper
 from .services.metrics import get_adjusted_draw, get_adjusted_teams, metrics_report
+from .services.player_store import get_squad, player_store, team_slug
 from .services.results_store import results_store
 
 app = FastAPI(
@@ -224,3 +237,121 @@ def scrape_refresh() -> dict:
 @app.get("/api/metrics/adjusted", response_model=list[AdjustedTeamOut])
 def adjusted_metrics() -> list[dict]:
     return metrics_report()
+
+
+# --------------------------------------------------------------------------- #
+# Per-game player analyzer
+# --------------------------------------------------------------------------- #
+
+def _team_squad_payload(team: str, source: str) -> dict:
+    slug = team_slug(team)
+    squad = get_squad(slug) or []
+    return {
+        "team": team,
+        "slug": slug,
+        "source": source if squad else "unavailable",
+        "players": [asdict(p) for p in squad],
+    }
+
+
+def _resolve_lineup(team: str, names: list[str], formation: str):
+    """Map 11 player names + a formation to a built lineup; HTTP errors on miss."""
+    squad = get_squad(team_slug(team))
+    if squad is None:
+        raise HTTPException(
+            status_code=404, detail=f"No squad data for '{team}'."
+        )
+    by_name = {p.name: p for p in squad}
+    try:
+        players = [by_name[n] for n in names]
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Player {exc} not in {team} squad."
+        )
+    try:
+        return build_lineup(formation, players)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+@app.post("/api/scrape/players", response_model=PlayerSquadResponse)
+def scrape_players(req: PlayerScrapeRequest) -> dict:
+    fixture = _fixtures_by_id().get(req.fixture_id)
+    if fixture is None:
+        raise HTTPException(
+            status_code=404, detail=f"Fixture '{req.fixture_id}' not found."
+        )
+    messages: list[str] = []
+    sources: dict[str, str] = {}
+    for side in ("home", "away"):
+        team = fixture[side]
+        if req.live:
+            _, source, msgs = player_scraper.scrape_squad(team)
+            messages.extend(msgs)
+        else:
+            doc = player_store.get_doc(team_slug(team))
+            source = doc.get("source", "seed") if doc else "unavailable"
+        sources[side] = source
+    return {
+        "fixture_id": req.fixture_id,
+        "home": _team_squad_payload(fixture["home"], sources["home"]),
+        "away": _team_squad_payload(fixture["away"], sources["away"]),
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
+        "messages": messages,
+    }
+
+
+@app.get("/api/players/{slug}")
+def get_team_players(slug: str) -> dict:
+    squad = get_squad(slug)
+    if squad is None:
+        raise HTTPException(
+            status_code=404, detail=f"No squad data for slug '{slug}'."
+        )
+    doc = player_store.get_doc(slug)
+    return _team_squad_payload(doc["team"] if doc else slug,
+                               doc.get("source", "seed") if doc else "seed")
+
+
+@app.post("/api/analyze/lineup", response_model=LineupAnalysisResponse)
+def analyze_lineup(req: LineupAnalysisRequest) -> dict:
+    home = _resolve_lineup(req.home_team, req.home_lineup, req.home_formation)
+    away = _resolve_lineup(req.away_team, req.away_lineup, req.away_formation)
+    return analyze_lineups(home, away)
+
+
+@app.post("/api/analyze/optimal-xi", response_model=OptimalXiResponse)
+def analyze_optimal_xi(req: OptimalXiRequest) -> dict:
+    squad = get_squad(team_slug(req.team))
+    if squad is None:
+        raise HTTPException(
+            status_code=404, detail=f"No squad data for '{req.team}'."
+        )
+    if req.opponent_lineup and req.opponent_team and req.opponent_formation:
+        opponent = _resolve_lineup(
+            req.opponent_team, req.opponent_lineup, req.opponent_formation
+        )
+    else:
+        opponent = []  # neutral opponent -> best XI in a vacuum (FSI ~ 0.5)
+    try:
+        candidates = optimal_xi(squad, req.formation, opponent, top_n=req.top_n)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {
+        "team": req.team,
+        "opponent_team": req.opponent_team or "",
+        "candidates": candidates,
+    }
+
+
+@app.get("/api/formations", response_model=dict[str, list[FormationSlotOut]])
+def list_formations() -> dict:
+    """Slot templates (label, position, unit-pitch x/y) for every supported
+    formation — the single source of truth shared with the SVG pitch UI."""
+    return {
+        name: [
+            {"slot": s.label, "position": s.position, "x": s.x, "y": s.y}
+            for s in slots
+        ]
+        for name, slots in FORMATIONS.items()
+    }
