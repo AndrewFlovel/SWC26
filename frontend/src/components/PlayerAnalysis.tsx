@@ -5,12 +5,15 @@ import {
   fetchFormations,
   fetchOptimalXi,
   scrapePlayers,
+  useConfirmedLineups,
 } from '../api/client';
 import { useI18n } from '../i18n';
 import type {
+  ConfirmedSide,
   Fixture,
   FormationMap,
   LineupAnalysis,
+  LineupJobStatus,
   PlayerSquadResponse,
   TeamSquad,
 } from '../types';
@@ -68,6 +71,31 @@ export default function PlayerAnalysis({
   const [homeLineup, setHomeLineup] = useState<string[]>([]);
   const [awayLineup, setAwayLineup] = useState<string[]>([]);
   const [analysis, setAnalysis] = useState<LineupAnalysis | null>(null);
+
+  // Confirmed-XI scrape: each button click increments the trigger to re-run.
+  // When the job finishes, apply each announced side (with a full 11 mapped to
+  // our squad) as that side's lineup; the rest keep their optimal XI.
+  const [lineupReq, setLineupReq] = useState(0);
+  const applyConfirmed = useCallback((s: LineupJobStatus) => {
+    const home = s.home;
+    const away = s.away;
+    const homeOk = !!home?.announced && home.lineup.length === 11;
+    const awayOk = !!away?.announced && away.lineup.length === 11;
+    if (homeOk) {
+      setHomeFormation(home!.formation);
+      setHomeLineup(home!.lineup);
+    }
+    if (awayOk) {
+      setAwayFormation(away!.formation);
+      setAwayLineup(away!.lineup);
+    }
+    if (homeOk || awayOk) setTab('formation');
+  }, []);
+  const { status: lineupStatus, error: lineupError } = useConfirmedLineups(
+    fixture.id,
+    lineupReq,
+    applyConfirmed,
+  );
 
   const fetchedKey = useRef<string | null>(null);
 
@@ -172,6 +200,21 @@ export default function PlayerAnalysis({
     [],
   );
 
+  const lineupMessage = useMemo(() => {
+    if (!lineupStatus) return null;
+    if (lineupStatus.status === 'pending' || lineupStatus.status === 'running')
+      return t('fetchingLineups');
+    if (lineupStatus.status === 'error') return lineupError ?? t('lineupsError');
+    const sides = [lineupStatus.home, lineupStatus.away].filter(
+      Boolean,
+    ) as ConfirmedSide[];
+    if (!sides.some((s) => s.announced)) return t('lineupsNotAnnounced');
+    const unmatched = sides.flatMap((s) => s.unmatched);
+    if (unmatched.length)
+      return t('lineupsUnmatched', { names: unmatched.join(', ') });
+    return t('lineupsAnnounced');
+  }, [lineupStatus, lineupError, t]);
+
   const unavailable = useMemo(() => {
     if (!squads) return [];
     const out: string[] = [];
@@ -215,6 +258,15 @@ export default function PlayerAnalysis({
               {loading && <span className="loading-pulse" />}
             </h2>
             <div className="analysis-head-actions">
+              <button
+                type="button"
+                className={`heat-toggle ${lineupReq > 0 ? 'on' : ''}`}
+                disabled={!bothValid}
+                onClick={() => setLineupReq((n) => n + 1)}
+                title={t('confirmedXi')}
+              >
+                {t('confirmedXi')}
+              </button>
               <button
                 type="button"
                 className={`heat-toggle ${live ? 'on' : ''}`}
@@ -263,6 +315,16 @@ export default function PlayerAnalysis({
               {unavailable.length > 0 && (
                 <div className="scrape-banner fallback">
                   {unavailable.map((team) => t('noSquadData', { team })).join(' ')}
+                </div>
+              )}
+
+              {lineupMessage && (
+                <div
+                  className={`scrape-banner ${
+                    lineupStatus?.status === 'error' ? 'fallback' : ''
+                  }`}
+                >
+                  {lineupMessage}
                 </div>
               )}
 

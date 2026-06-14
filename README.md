@@ -8,9 +8,10 @@ profiles, form momentum, injury attrition, transcontinental travel burden, altit
 hypoxia and WBGT heat stress.
 
 Dark, blood-red, WebGL-powered. Drag the sliders — the engine recalculates in real time.
-Open any fixture for a player-by-player breakdown: squad ratings, formation matchups and
-a best-XI optimizer. The interface is available in **English, Spanish and Portuguese**
-(selector at the top right; it also auto-detects your browser language).
+Open any fixture for a player-by-player breakdown: squad ratings, formation matchups,
+a best-XI optimizer, and a one-click pull of the **confirmed match-day lineups**. The
+interface is available in **English, Spanish and Portuguese** (selector at the top right;
+it also auto-detects your browser language).
 
 ## Quickstart (Docker)
 
@@ -49,7 +50,8 @@ A maximum-likelihood calibrator with Dixon-Coles time decay is included
 Beyond the team-level model, any fixture can be opened for a **player-by-player**
 breakdown. Selecting a match triggers a hybrid squad scrape — `requests` against
 FBref's server-rendered stat tables, with bundled seed squads as the reliable
-fallback (Selenium is reserved for confirmed match-day lineups). Each player gets a
+fallback (headless-Chrome Selenium adds confirmed match-day lineups on demand —
+see below). Each player gets a
 **Player Performance Score (PPS)**: a role-weighted blend of attacking, defensive and
 physical facets, each normalized against fixed elite-football reference ranges so
 scores are absolute and comparable across squads.
@@ -69,6 +71,14 @@ SVG pitch, PPS-colored player nodes and the dominance heatmap. Seed squads ship 
 Spain, Uruguay, Argentina and Austria (fixtures Uruguay–Spain and Argentina–Austria);
 other fixtures degrade gracefully until their squads are scraped or seeded.
 
+**Confirmed lineups.** A "Confirmed XI" action pulls the announced starting elevens
+from Sofascore via headless Chrome. Because that page is JS-rendered and the scrape is
+slow, it runs as a background job (`POST /api/scrape/lineups`) that the UI polls
+(`GET /api/scrape/players/status/{fixture_id}`); once both XIs are confirmed they are
+matched to the squad, ordered into formation slots and applied to the pitch — otherwise
+the analyzer keeps its optimal XI. The scraper never raises: missing Chrome, an unmapped
+fixture, or lineups not yet announced all fall back to the optimal-XI path.
+
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/api/players/{slug}` | Scored squad (PPS) for a team — seed or scraped |
@@ -76,6 +86,8 @@ other fixtures degrade gracefully until their squads are scraped or seeded.
 | POST | `/api/analyze/lineup` | FSI, pressing, positional battles and 3×3 dominance heatmap for two XIs |
 | POST | `/api/analyze/optimal-xi` | Best XI (Hungarian) vs an opponent — top-3 candidates |
 | GET | `/api/formations` | Formation slot coordinates (4-3-3, 4-2-3-1, 4-4-2, 3-5-2) |
+| POST | `/api/scrape/lineups` | Start a background confirmed-XI scrape (Sofascore, headless Chrome) |
+| GET | `/api/scrape/players/status/{fixture_id}` | Poll the confirmed-lineup job status/result |
 
 ## API
 
@@ -97,8 +109,9 @@ docker-compose.yml     One-command deployment (frontend + backend)
 backend/app/engine/    Prediction engine (config, core math, predictor, Monte Carlo
                        simulators, MLE calibration, data loader) + player analyzer
                        (player models, PPS scorer, lineup/FSI/optimal-XI analyzer)
-backend/app/services/  Results store + metrics replay, day scraper, and the squad
-                       cache + hybrid FBref player scraper
+backend/app/services/  Results store + metrics replay, day scraper, the squad cache +
+                       hybrid FBref player scraper, and the Selenium confirmed-lineup
+                       scraper + threaded background-job registry
 backend/app/data/      48-team dataset + 16-venue catalogue; data/players/ holds
                        seed squads (Spain, Uruguay, Argentina, Austria)
 backend/tests/         Engine, results and player-analyzer tests

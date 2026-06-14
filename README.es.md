@@ -9,8 +9,9 @@ lesiones, carga de viajes transcontinentales, hipoxia de altitud y estrés térm
 
 Oscura, rojo sangre, impulsada por WebGL. Mueve los controles deslizantes: el motor
 recalcula en tiempo real. Abre cualquier partido para un desglose jugador por jugador:
-valoraciones de plantilla, enfrentamientos de formación y un optimizador del mejor once.
-La interfaz está disponible en **inglés, español y portugués** (selector arriba a la
+valoraciones de plantilla, enfrentamientos de formación, un optimizador del mejor once y
+una descarga con un clic de las **alineaciones confirmadas del día del partido**. La
+interfaz está disponible en **inglés, español y portugués** (selector arriba a la
 derecha; también detecta automáticamente el idioma del navegador).
 
 ## Inicio rápido (Docker)
@@ -52,8 +53,9 @@ máxima verosimilitud con decaimiento temporal estilo Dixon-Coles
 Más allá del modelo a nivel de selección, cualquier partido puede abrirse para un
 desglose **jugador por jugador**. Al seleccionar un encuentro se dispara un scraping
 híbrido de plantillas — `requests` contra las tablas de FBref (renderizadas en el
-servidor), con plantillas semilla incluidas como respaldo fiable (Selenium queda
-reservado para las alineaciones confirmadas del día del partido). Cada jugador recibe
+servidor), con plantillas semilla incluidas como respaldo fiable (Selenium con Chrome
+headless añade las alineaciones confirmadas del día del partido bajo demanda — ver
+abajo). Cada jugador recibe
 un **Player Performance Score (PPS)**: una mezcla ponderada por rol de facetas
 ofensivas, defensivas y físicas, cada una normalizada contra rangos de referencia
 fijos del fútbol de élite, de modo que los puntajes son absolutos y comparables entre
@@ -76,6 +78,16 @@ Se incluyen plantillas semilla para España, Uruguay, Argentina y Austria (parti
 Uruguay–España y Argentina–Austria); el resto de partidos degrada con elegancia hasta
 que sus plantillas se scrapeen o se sembren.
 
+**Alineaciones confirmadas.** La acción "XI confirmado" obtiene los onces titulares
+anunciados desde Sofascore mediante Chrome headless. Como esa página se renderiza en el
+cliente y el scraping es lento, se ejecuta como tarea en segundo plano
+(`POST /api/scrape/lineups`) que la interfaz consulta
+(`GET /api/scrape/players/status/{fixture_id}`); cuando ambos onces están confirmados se
+emparejan con la plantilla, se ordenan en las posiciones de la formación y se aplican al
+campo — si no, el analizador mantiene su once óptimo. El scraper nunca lanza excepciones:
+la falta de Chrome, un partido sin mapear o alineaciones aún no anunciadas recurren al
+once óptimo.
+
 | Método | Ruta | Propósito |
 | --- | --- | --- |
 | GET | `/api/players/{slug}` | Plantilla con PPS de una selección — semilla o scrapeada |
@@ -83,6 +95,8 @@ que sus plantillas se scrapeen o se sembren.
 | POST | `/api/analyze/lineup` | FSI, presión, duelos posicionales y mapa de dominio 3×3 de dos onces |
 | POST | `/api/analyze/optimal-xi` | Mejor once (húngaro) frente a un rival — top-3 candidatos |
 | GET | `/api/formations` | Coordenadas de las posiciones por formación (4-3-3, 4-2-3-1, 4-4-2, 3-5-2) |
+| POST | `/api/scrape/lineups` | Inicia un scrape de XI confirmado en segundo plano (Sofascore, Chrome headless) |
+| GET | `/api/scrape/players/status/{fixture_id}` | Consulta el estado/resultado del trabajo de alineación confirmada |
 
 ## API
 
@@ -106,7 +120,9 @@ backend/app/engine/    Motor predictivo (config, núcleo matemático, predictor,
                        analizador de jugadores (modelos de jugador, scorer PPS,
                        analizador de alineación/FSI/once-óptimo)
 backend/app/services/  Almacén de resultados + replay de métricas, scraper del día,
-                       y la caché de plantillas + scraper híbrido de jugadores (FBref)
+                       la caché de plantillas + scraper híbrido de jugadores (FBref), y
+                       el scraper Selenium de alineaciones confirmadas + registro de
+                       trabajos en segundo plano (hilos)
 backend/app/data/      Dataset de 48 selecciones + catálogo de 16 sedes; data/players/
                        guarda plantillas semilla (España, Uruguay, Argentina, Austria)
 backend/tests/         Tests del motor, de resultados y del analizador de jugadores

@@ -34,6 +34,9 @@ The frontend image is built with `VITE_API_BASE=""`, so the app issues relative
 `/api/*` requests to its own origin. nginx (see `frontend/nginx.conf`) proxies
 those to `http://backend:8001` over the Compose network — no CORS involved.
 
+The backend image bundles Chromium + chromedriver (with `CHROME_BIN`/`CHROMEDRIVER`
+preset), so the confirmed-lineup scrape works out of the box — no extra setup.
+
 ---
 
 ## Option B — Local development
@@ -60,6 +63,12 @@ curl http://localhost:8001/api/health
 # {"status":"ok","teams":48}
 ```
 
+> **Confirmed-lineup scrape (optional).** The "Confirmed XI" feature drives headless
+> Chrome via Selenium. Install Chrome/Chromium locally and Selenium Manager resolves the
+> driver automatically; or point at system binaries with the `CHROME_BIN` / `CHROMEDRIVER`
+> env vars (the Docker image sets both). Without a browser the feature degrades gracefully
+> and everything else works unchanged.
+
 ### 2. Frontend
 
 In a second terminal:
@@ -85,7 +94,9 @@ cd backend
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Expected: `56 passed` (prediction engine, results tracking and player analyzer).
+Expected: `66 passed` (prediction engine, results tracking, player analyzer and the
+confirmed-lineup scraper). The Selenium tests are fully offline — they mock the browser
+fetch, so no Chrome is launched.
 
 ### 4. Production build of the frontend (optional)
 
@@ -113,7 +124,12 @@ npm run preview    # serves the production bundle locally
    squads are bundled for Spain, Uruguay, Argentina and Austria (try Uruguay vs Spain
    in Group H, or Argentina vs Austria in Group J); other fixtures show a graceful
    "no squad data" notice.
-5. **Switch language** (EN/ES/PT) with the selector at the top right. The choice
+5. **Pull the confirmed XI** with the "Confirmed XI" button in the overlay. It launches
+   a background Sofascore scrape (headless Chrome) and polls until done, then applies each
+   announced starting eleven to the pitch. This is best-effort: the fixture must be mapped
+   in `SOFASCORE_EVENTS` and lineups are only posted shortly before kickoff — otherwise the
+   analyzer keeps its optimal XI and shows a status banner.
+6. **Switch language** (EN/ES/PT) with the selector at the top right. The choice
    persists in `localStorage`; the first visit auto-detects the browser language.
 
 ## Troubleshooting
