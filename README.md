@@ -48,11 +48,28 @@ A maximum-likelihood calibrator with Dixon-Coles time decay is included
 
 Beyond the team-level model, any fixture can be opened for a **player-by-player**
 breakdown. Selecting a match triggers a hybrid squad scrape — `requests` against
-FBref's server-rendered stat tables, with bundled seed squads as the reliable
-fallback (Selenium is reserved for confirmed match-day lineups). Each player gets a
+FBref's server-rendered stat tables, with bundled reference squads as the reliable
+fallback (Selenium is reserved for confirmed match-day lineups). The scrape reads
+**attacking** per-90s from the standard table and **real defensive** metrics
+(tackles, interceptions, clearances, aerials) from FBref's comment-wrapped
+Defensive-Actions and Misc tables, per-90-normalized via `minutes_90s`; only
+pressures fall back to position defaults (FBref discontinued them). Each player gets a
 **Player Performance Score (PPS)**: a role-weighted blend of attacking, defensive and
 physical facets, each normalized against fixed elite-football reference ranges so
 scores are absolute and comparable across squads.
+
+**All 48 teams ship with a committed reference squad**, so every fixture works
+offline. FBref squad URLs are resolved through a hybrid map
+(`data/fbref_squads.json` + on-demand discovery from FBref's World Cup index); teams
+FBref cannot supply get a deterministic synthetic baseline scaled by team strength.
+Regenerate or refresh the reference squads with the bootstrap CLI:
+
+```bash
+cd backend
+python -m scripts.bootstrap_squads            # populate/refresh all 48 teams
+python -m scripts.bootstrap_squads --team Brazil --force   # one team, re-scrape
+python -m scripts.bootstrap_squads --discover-only         # just refresh the URL map
+```
 
 From two XIs the engine derives the matchup geometrically — any formation pair works,
 no hand-coded tables:
@@ -65,14 +82,17 @@ no hand-coded tables:
   Hungarian assignment (`scipy.optimize.linear_sum_assignment`), with ranked alternates
 
 The UI opens a full-screen overlay (Squad · Formation · Battles · Optimizer) with an
-SVG pitch, PPS-colored player nodes and the dominance heatmap. Seed squads ship for
-Spain, Uruguay, Argentina and Austria (fixtures Uruguay–Spain and Argentina–Austria);
-other fixtures degrade gracefully until their squads are scraped or seeded.
+SVG pitch, PPS-colored player nodes and the dominance heatmap. Every fixture works out
+of the box: Spain, Uruguay, Argentina and Austria ship as hand-curated seed squads,
+the other 44 teams as committed reference squads (`source` is reported per team as
+`seed`, `scraped` or `synthetic`).
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/players/{slug}` | Scored squad (PPS) for a team — seed or scraped |
-| POST | `/api/scrape/players` | Scrape both squads of a fixture (FBref, seed fallback) |
+| GET | `/api/players` | Squad coverage across the 48 teams — player count and `source` per team |
+| GET | `/api/players/{slug}` | Scored squad (PPS) for a team — seed, scraped or synthetic |
+| POST | `/api/scrape/players` | Scrape both squads of a fixture (FBref, reference fallback) |
+| POST | `/api/scrape/discover` | Refresh the FBref squad-URL map from the World Cup index |
 | POST | `/api/analyze/lineup` | FSI, pressing, positional battles and 3×3 dominance heatmap for two XIs |
 | POST | `/api/analyze/optimal-xi` | Best XI (Hungarian) vs an opponent — top-3 candidates |
 | GET | `/api/formations` | Formation slot coordinates (4-3-3, 4-2-3-1, 4-4-2, 3-5-2) |
@@ -97,11 +117,13 @@ docker-compose.yml     One-command deployment (frontend + backend)
 backend/app/engine/    Prediction engine (config, core math, predictor, Monte Carlo
                        simulators, MLE calibration, data loader) + player analyzer
                        (player models, PPS scorer, lineup/FSI/optimal-XI analyzer)
-backend/app/services/  Results store + metrics replay, day scraper, and the squad
-                       cache + hybrid FBref player scraper
-backend/app/data/      48-team dataset + 16-venue catalogue; data/players/ holds
-                       seed squads (Spain, Uruguay, Argentina, Austria)
-backend/tests/         Engine, results and player-analyzer tests
+backend/app/services/  Results store + metrics replay, day scraper, hybrid FBref
+                       player scraper + squad cache, and the FBref squad-URL resolver
+backend/app/data/      48-team dataset + 16-venue catalogue; data/players/ holds a
+                       reference squad per team (4 seed, 44 scraped/synthetic);
+                       data/fbref_squads.json is the committed FBref squad-URL map
+backend/scripts/       bootstrap_squads.py — one-time CLI to populate/refresh squads
+backend/tests/         Engine, results, player-analyzer and player-scraper tests
 frontend/src/i18n.tsx  EN/ES/PT translations + language context
 frontend/src/three/    React Three Fiber blood-themed 3D hero scene
 frontend/src/components/  Dashboard, group tables, interactive match analysis, and the

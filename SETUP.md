@@ -85,7 +85,8 @@ cd backend
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Expected: `56 passed` (prediction engine, results tracking and player analyzer).
+Expected: `64 passed` (prediction engine, results tracking, player analyzer and
+player scraper).
 
 ### 4. Production build of the frontend (optional)
 
@@ -107,12 +108,16 @@ npm run preview    # serves the production bundle locally
    win/draw/loss bars, the most probable scorelines and the exact-score heatmap
    update live.
 4. **Open a deep player analysis** with the "⚔ Deep player analysis" button in the
-   match modal. The overlay scrapes both squads (with a seed fallback) and surfaces
-   squad cards with Player Performance Scores, an SVG formation pitch with a 3×3
-   dominance heatmap, the positional-battles table, and a best-XI optimizer. Seed
-   squads are bundled for Spain, Uruguay, Argentina and Austria (try Uruguay vs Spain
-   in Group H, or Argentina vs Austria in Group J); other fixtures show a graceful
-   "no squad data" notice.
+   match modal. The overlay scrapes both squads (with a reference-squad fallback) and
+   surfaces squad cards with Player Performance Scores, an SVG formation pitch with a
+   3×3 dominance heatmap, the positional-battles table, and a best-XI optimizer. **All
+   48 teams ship with a reference squad**, so every fixture works — Spain, Uruguay,
+   Argentina and Austria are hand-curated seed squads (try Uruguay vs Spain in Group H,
+   or Argentina vs Austria in Group J); the rest are committed scraped/synthetic
+   references. To refresh them from FBref, run
+   `python -m scripts.bootstrap_squads` from `backend/` (add `--force` to overwrite
+   existing files, `--team <Name>` for a single team). `GET /api/players` reports the
+   per-team `source` and player count.
 5. **Switch language** (EN/ES/PT) with the selector at the top right. The choice
    persists in `localStorage`; the first visit auto-detects the browser language.
 

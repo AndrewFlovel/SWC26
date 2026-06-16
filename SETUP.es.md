@@ -85,7 +85,8 @@ cd backend
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Resultado esperado: `56 passed` (motor predictivo, seguimiento de resultados y analizador de jugadores).
+Resultado esperado: `64 passed` (motor predictivo, seguimiento de resultados, analizador
+de jugadores y scraper de jugadores).
 
 ### 4. Build de producción del frontend (opcional)
 
@@ -108,12 +109,16 @@ npm run preview    # sirve el bundle de producción localmente
    debounce (~250 ms): las barras de victoria/empate/derrota, los marcadores más
    probables y el mapa de calor de marcador exacto se actualizan en vivo.
 4. **Abre un análisis de jugadores** con el botón "⚔ Análisis de jugadores" del modal
-   de partido. La superposición scrapea ambas plantillas (con respaldo semilla) y
+   de partido. La superposición scrapea ambas plantillas (con respaldo de referencia) y
    muestra tarjetas de jugador con su Player Performance Score, un campo SVG con un
    mapa de dominio 3×3, la tabla de duelos posicionales y un optimizador del mejor
-   once. Se incluyen plantillas semilla para España, Uruguay, Argentina y Austria
-   (prueba Uruguay vs España en el Grupo H, o Argentina vs Austria en el Grupo J);
-   el resto de partidos muestra un aviso de "sin datos de plantilla".
+   once. **Las 48 selecciones incluyen una plantilla de referencia**, así que cualquier
+   partido funciona: España, Uruguay, Argentina y Austria son plantillas semilla curadas
+   a mano (prueba Uruguay vs España en el Grupo H, o Argentina vs Austria en el Grupo J);
+   el resto son plantillas scrapeadas/sintéticas versionadas. Para actualizarlas desde
+   FBref, ejecuta `python -m scripts.bootstrap_squads` desde `backend/` (añade `--force`
+   para sobrescribir, `--team <Nombre>` para una sola selección). `GET /api/players`
+   reporta el `source` y el recuento de jugadores por selección.
 5. **Cambia el idioma** (EN/ES/PT) con el selector de arriba a la derecha. La
    elección se guarda en `localStorage`; en la primera visita se detecta
    automáticamente el idioma del navegador.

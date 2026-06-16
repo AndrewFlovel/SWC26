@@ -3,12 +3,20 @@
 FBref renders its squad stat tables server-side, so `requests` + BeautifulSoup
 is sufficient — Selenium is reserved for the JS-rendered confirmed-lineup page
 in a later phase. Parsing keys off FBref's stable `data-stat` attributes
-(`player`, `position`, `xg_per90`, `tackles_won`, ...). Following the existing
-scraper.py contract, this module **never raises**: on any network error, empty
-parse, or unknown team it falls back to the seed/cached squad in player_store,
-tagging the `source` accordingly. Scraped squads are diagnostic; the seed data
-is the reliable path (FBref rate-limits aggressively and 2026 pages may be
-sparse).
+(`player`, `position`, `xg_per90`, `tackles_won`, ...). Squad URLs are resolved
+for any of the 48 teams through services.fbref_index (committed url-map with a
+discovery fallback). Following the existing scraper.py contract, this module
+**never raises**: on any network error, empty parse, or unknown team it falls
+back to the seed/cached squad in player_store, tagging the `source` accordingly.
+Scraped squads are diagnostic; the seed data is the reliable path (FBref rate-
+limits aggressively and 2026 pages may be sparse).
+
+Defensive depth: FBref publishes the Defensive-Actions and Misc tables on the
+same squad page but wraps them in HTML comments. `_uncomment_tables` exposes
+them so tackles/interceptions/clearances/aerials are read for real and
+per-90-normalized via the standard table's `minutes_90s`. Pressures
+(`pressures90`, `pressures_won_pct`) were discontinued by FBref, so those two
+fields alone remain backfilled from `_DEF_DEFAULTS`.
 """
 
 from __future__ import annotations
@@ -19,9 +27,10 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 
 from ..engine.player_models import GROUP_OF, POSITIONS
+from .fbref_index import squad_url
 from .player_store import player_store, team_slug
 
 logger = logging.getLogger("wc2026.player_scraper")
@@ -29,15 +38,6 @@ logger = logging.getLogger("wc2026.player_scraper")
 USER_AGENT = "Mozilla/5.0 (compatible; swc26-analytics/1.0; +per-game player analyzer)"
 REQUEST_DELAY_S = 3.0          # FBref tolerates ~10 req/min; stay well under
 REQUEST_TIMEOUT = (4.0, 8.0)   # (connect, read)
-
-# FBref national-team stats pages, keyed by canonical team name. Extend as the
-# tournament squads get published; unknown teams fall back to seed data.
-FBREF_TEAMS: Dict[str, str] = {
-    "Spain": "https://fbref.com/en/squads/697ed4de/Spain-Men-Stats",
-    "Uruguay": "https://fbref.com/en/squads/3372b561/Uruguay-Men-Stats",
-    "Argentina": "https://fbref.com/en/squads/8a5d1402/Argentina-Men-Stats",
-    "Austria": "https://fbref.com/en/squads/1e290e7f/Austria-Men-Stats",
-}
 
 # FBref spelling -> teams.json spelling (mirrors NAME_ALIASES in scraper.py).
 PLAYER_ALIASES: Dict[str, str] = {}
@@ -51,7 +51,10 @@ _POS_MAP: Dict[str, str] = {
     "FW": "ST", "ST": "ST", "CF": "ST", "LW": "LW", "RW": "RW", "LM": "LW", "RM": "RW",
 }
 
-# Defensive per-90 / % backfill when a table lacks them, by taxonomy position.
+# Defensive per-90 / % values by taxonomy position. Used as the baseline before
+# real values are merged in from the Defensive-Actions / Misc tables, and as the
+# permanent source for `pressures90` / `pressures_won_pct` (which FBref no longer
+# publishes) and for any player missing from the secondary tables.
 _DEF_DEFAULTS: Dict[str, Dict[str, float]] = {
     "GK": dict(tackles_won_pct=50, interceptions90=0.1, clearances90=1.0,
                pressures90=1.5, pressures_won_pct=25, aerial_won_pct=42),
@@ -113,19 +116,72 @@ def _i(row, stat: str, default: int = 0) -> int:
     return int(_f(row, stat, default))
 
 
+def _per90(total: float, nineties: float) -> float:
+    """Per-90 rate from a season total and a count of 90-minute units; the
+    `minutes_90s` denominator guards a zero-minutes player (returns 0.0)."""
+    return round(total / nineties, 3) if nineties > 0 else 0.0
+
+
+def _pct(value: float) -> float:
+    """Clamp a computed percentage into the [0, 100] range PlayerProfile expects."""
+    return min(max(value, 0.0), 100.0)
+
+
 def _get_soup(url: str) -> BeautifulSoup:
     resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return BeautifulSoup(resp.text, "html.parser")
 
 
-def parse_standard_table(soup: BeautifulSoup, team: str) -> List[dict]:
-    """Extract player rows from an FBref standard-stats table via data-stat keys.
+def _uncomment_tables(soup: BeautifulSoup) -> List[BeautifulSoup]:
+    """Re-parse FBref's comment-wrapped secondary tables (defense, misc, ...).
 
-    Per-90 attacking metrics are read directly; defensive metrics not present in
-    the standard table are backfilled from position defaults so PPS stays
-    meaningful. Returns a list of PlayerProfile-shaped dicts.
+    FBref hides every table after the first inside an HTML comment; this returns
+    the parsed `<table>` fragments so their `data-stat` cells become queryable.
     """
+    out: List[BeautifulSoup] = []
+    for comment in soup.find_all(string=lambda s: isinstance(s, Comment)):
+        if "<table" not in comment:
+            continue
+        out.append(BeautifulSoup(comment, "html.parser"))
+    return out
+
+
+def _index_rows_by_player(table_soup: BeautifulSoup) -> Dict[str, "BeautifulSoup"]:
+    """Map canonical player name -> its row within a table soup."""
+    rows: Dict[str, BeautifulSoup] = {}
+    for row in table_soup.select("table tbody tr"):
+        if row.get("class") and "thead" in row.get("class"):
+            continue
+        name = _cell(row, "player")
+        if name:
+            rows.setdefault(_canonical_name(name), row)
+    return rows
+
+
+def _find_table(tables: List[BeautifulSoup], stat: str) -> Optional[BeautifulSoup]:
+    """First un-commented table that exposes a given data-stat column."""
+    for t in tables:
+        if t.find(attrs={"data-stat": stat}) is not None:
+            return t
+    return None
+
+
+def parse_squad(soup: BeautifulSoup, team: str) -> List[dict]:
+    """Extract player rows from an FBref squad page via stable data-stat keys.
+
+    Attacking per-90s come straight from the standard table. Defensive metrics are
+    read from the (comment-wrapped) Defensive-Actions and Misc tables and
+    normalized to per-90 using the standard table's `minutes_90s`; pressures and
+    any player absent from the secondary tables fall back to position defaults.
+    Returns a list of PlayerProfile-shaped dicts.
+    """
+    secondary = _uncomment_tables(soup)
+    def_table = _find_table(secondary, "interceptions")
+    misc_table = _find_table(secondary, "aerials_won_pct")
+    def_rows = _index_rows_by_player(def_table) if def_table else {}
+    misc_rows = _index_rows_by_player(misc_table) if misc_table else {}
+
     players: List[dict] = []
     for row in soup.select("table tbody tr"):
         if row.get("class") and "thead" in row.get("class"):
@@ -133,10 +189,34 @@ def parse_standard_table(soup: BeautifulSoup, team: str) -> List[dict]:
         name = _cell(row, "player")
         if not name:
             continue
+        canon = _canonical_name(name)
         pos = normalize_position(_cell(row, "position") or "")
+        if pos not in POSITIONS:
+            continue
         defaults = _DEF_DEFAULTS.get(pos, _DEF_DEFAULTS["CM"])
-        player = {
-            "name": _canonical_name(name),
+        nineties = _f(row, "minutes_90s")
+
+        # Defensive metrics: real where the secondary tables have this player.
+        drow = def_rows.get(canon)
+        mrow = misc_rows.get(canon)
+        if drow is not None:
+            tackles = _f(drow, "tackles")
+            tackles_won = _f(drow, "tackles_won")
+            tackles_won_pct = (
+                _f(drow, "challenge_tackles_pct")
+                or (_pct(100.0 * tackles_won / tackles) if tackles > 0 else defaults["tackles_won_pct"])
+            )
+            interceptions90 = _per90(_f(drow, "interceptions"), nineties)
+            clearances90 = _per90(_f(drow, "clearances"), nineties)
+        else:
+            tackles_won_pct = defaults["tackles_won_pct"]
+            interceptions90 = defaults["interceptions90"]
+            clearances90 = defaults["clearances90"]
+        aerial_won_pct = _pct(_f(mrow, "aerials_won_pct")) if mrow is not None \
+            else defaults["aerial_won_pct"]
+
+        players.append({
+            "name": canon,
             "team": team,
             "position": pos,
             "position_group": GROUP_OF[pos],
@@ -151,17 +231,15 @@ def parse_standard_table(soup: BeautifulSoup, team: str) -> List[dict]:
             "progressive_passes90": _f(row, "progressive_passes_per90"),
             "shot_creating_actions90": _f(row, "sca_per90"),
             "dribbles_completed90": _f(row, "take_ons_won_per90"),
-            "tackles_won_pct": defaults["tackles_won_pct"],
-            "interceptions90": defaults["interceptions90"],
-            "clearances90": defaults["clearances90"],
-            "pressures90": defaults["pressures90"],
-            "pressures_won_pct": defaults["pressures_won_pct"],
-            "aerial_won_pct": defaults["aerial_won_pct"],
+            "tackles_won_pct": _pct(tackles_won_pct),
+            "interceptions90": interceptions90,
+            "clearances90": clearances90,
+            "pressures90": defaults["pressures90"],          # discontinued by FBref
+            "pressures_won_pct": defaults["pressures_won_pct"],  # discontinued by FBref
+            "aerial_won_pct": aerial_won_pct,
             "is_starter": False,
             "source": "scraped",
-        }
-        if player["position"] in POSITIONS:
-            players.append(player)
+        })
     return players
 
 
@@ -174,13 +252,13 @@ def scrape_squad(team: str) -> Tuple[Optional[dict], str, List[str]]:
     """
     slug = team_slug(team)
     messages: List[str] = []
-    url = FBREF_TEAMS.get(team)
+    url = squad_url(team)
 
     if url is not None:
         try:
             time.sleep(REQUEST_DELAY_S)
             soup = _get_soup(url)
-            rows = parse_standard_table(soup, team)
+            rows = parse_squad(soup, team)
             if rows:
                 doc = {
                     "team": team,

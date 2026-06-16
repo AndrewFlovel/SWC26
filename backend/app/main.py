@@ -48,9 +48,9 @@ from .schemas import (
     TournamentSimRequest,
     TournamentSimResponse,
 )
-from .services import player_scraper, scraper
+from .services import fbref_index, player_scraper, scraper
 from .services.metrics import get_adjusted_draw, get_adjusted_teams, metrics_report
-from .services.player_store import get_squad, player_store, team_slug
+from .services.player_store import get_squad, player_store, squad_index, team_slug
 from .services.results_store import results_store
 
 app = FastAPI(
@@ -298,6 +298,32 @@ def scrape_players(req: PlayerScrapeRequest) -> dict:
         "away": _team_squad_payload(fixture["away"], sources["away"]),
         "scraped_at": datetime.now(timezone.utc).isoformat(),
         "messages": messages,
+    }
+
+
+@app.get("/api/players")
+def list_player_squads() -> dict:
+    """Squad coverage across the 48 teams: slug -> player count and source."""
+    teams = [
+        {
+            "slug": slug,
+            "team": (doc := player_store.get_doc(slug)) and doc.get("team", slug) or slug,
+            "players": count,
+            "source": doc.get("source", "seed") if doc else "seed",
+        }
+        for slug, count in squad_index().items()
+    ]
+    return {"count": len(teams), "teams": teams}
+
+
+@app.post("/api/scrape/discover")
+def scrape_discover() -> dict:
+    """Refresh the FBref squad-url map from the competition index. Never raises."""
+    mapping = fbref_index.discover_squad_urls()
+    return {
+        "resolved": len(mapping),
+        "teams": sorted(mapping.keys()),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 

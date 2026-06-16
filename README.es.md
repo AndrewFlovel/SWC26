@@ -52,12 +52,29 @@ máxima verosimilitud con decaimiento temporal estilo Dixon-Coles
 Más allá del modelo a nivel de selección, cualquier partido puede abrirse para un
 desglose **jugador por jugador**. Al seleccionar un encuentro se dispara un scraping
 híbrido de plantillas — `requests` contra las tablas de FBref (renderizadas en el
-servidor), con plantillas semilla incluidas como respaldo fiable (Selenium queda
-reservado para las alineaciones confirmadas del día del partido). Cada jugador recibe
-un **Player Performance Score (PPS)**: una mezcla ponderada por rol de facetas
-ofensivas, defensivas y físicas, cada una normalizada contra rangos de referencia
+servidor), con plantillas de referencia incluidas como respaldo fiable (Selenium queda
+reservado para las alineaciones confirmadas del día del partido). El scraping lee los
+por-90 **ofensivos** de la tabla estándar y las métricas **defensivas reales** (entradas,
+intercepciones, despejes, duelos aéreos) de las tablas de Acciones Defensivas y Misc de
+FBref (envueltas en comentarios HTML), normalizadas a por-90 con `minutes_90s`; solo las
+presiones recurren a valores por defecto por posición (FBref las descontinuó). Cada
+jugador recibe un **Player Performance Score (PPS)**: una mezcla ponderada por rol de
+facetas ofensivas, defensivas y físicas, cada una normalizada contra rangos de referencia
 fijos del fútbol de élite, de modo que los puntajes son absolutos y comparables entre
 plantillas.
+
+**Las 48 selecciones incluyen una plantilla de referencia versionada**, así que cualquier
+partido funciona sin conexión. Las URLs de FBref se resuelven con un mapa híbrido
+(`data/fbref_squads.json` + descubrimiento bajo demanda desde el índice del Mundial); las
+selecciones que FBref no puede aportar reciben una base sintética determinista escalada por
+la fuerza del equipo. Regenera o actualiza las plantillas con la CLI de bootstrap:
+
+```bash
+cd backend
+python -m scripts.bootstrap_squads            # poblar/actualizar las 48 selecciones
+python -m scripts.bootstrap_squads --team Brazil --force   # una selección, re-scrapear
+python -m scripts.bootstrap_squads --discover-only         # solo refrescar el mapa de URLs
+```
 
 A partir de dos onces el motor deriva el enfrentamiento de forma geométrica — funciona
 con cualquier par de formaciones, sin tablas codificadas a mano:
@@ -72,14 +89,17 @@ con cualquier par de formaciones, sin tablas codificadas a mano:
 
 La interfaz abre una superposición a pantalla completa (Plantilla · Formación · Duelos ·
 Optimizador) con un campo SVG, nodos de jugador coloreados por PPS y el mapa de dominio.
-Se incluyen plantillas semilla para España, Uruguay, Argentina y Austria (partidos
-Uruguay–España y Argentina–Austria); el resto de partidos degrada con elegancia hasta
-que sus plantillas se scrapeen o se sembren.
+Cualquier partido funciona de inmediato: España, Uruguay, Argentina y Austria son
+plantillas semilla curadas a mano (partidos Uruguay–España y Argentina–Austria) y las
+otras 44 selecciones son plantillas de referencia versionadas (el `source` se reporta por
+selección como `seed`, `scraped` o `synthetic`).
 
 | Método | Ruta | Propósito |
 | --- | --- | --- |
-| GET | `/api/players/{slug}` | Plantilla con PPS de una selección — semilla o scrapeada |
-| POST | `/api/scrape/players` | Scrapea ambas plantillas de un partido (FBref, respaldo semilla) |
+| GET | `/api/players` | Cobertura de plantillas de las 48 selecciones — recuento y `source` por equipo |
+| GET | `/api/players/{slug}` | Plantilla con PPS de una selección — semilla, scrapeada o sintética |
+| POST | `/api/scrape/players` | Scrapea ambas plantillas de un partido (FBref, respaldo de referencia) |
+| POST | `/api/scrape/discover` | Refresca el mapa de URLs de FBref desde el índice del Mundial |
 | POST | `/api/analyze/lineup` | FSI, presión, duelos posicionales y mapa de dominio 3×3 de dos onces |
 | POST | `/api/analyze/optimal-xi` | Mejor once (húngaro) frente a un rival — top-3 candidatos |
 | GET | `/api/formations` | Coordenadas de las posiciones por formación (4-3-3, 4-2-3-1, 4-4-2, 3-5-2) |
@@ -106,10 +126,14 @@ backend/app/engine/    Motor predictivo (config, núcleo matemático, predictor,
                        analizador de jugadores (modelos de jugador, scorer PPS,
                        analizador de alineación/FSI/once-óptimo)
 backend/app/services/  Almacén de resultados + replay de métricas, scraper del día,
-                       y la caché de plantillas + scraper híbrido de jugadores (FBref)
+                       scraper híbrido de jugadores (FBref) + caché de plantillas, y el
+                       resolutor de URLs de plantillas de FBref
 backend/app/data/      Dataset de 48 selecciones + catálogo de 16 sedes; data/players/
-                       guarda plantillas semilla (España, Uruguay, Argentina, Austria)
-backend/tests/         Tests del motor, de resultados y del analizador de jugadores
+                       guarda una plantilla de referencia por selección (4 semilla,
+                       44 scrapeadas/sintéticas); data/fbref_squads.json es el mapa
+                       versionado de URLs de plantillas de FBref
+backend/scripts/       bootstrap_squads.py — CLI única para poblar/actualizar plantillas
+backend/tests/         Tests del motor, de resultados, del analizador y del scraper de jugadores
 frontend/src/i18n.tsx  Traducciones EN/ES/PT + contexto de idioma
 frontend/src/three/    Escena 3D temática de sangre con React Three Fiber
 frontend/src/components/  Dashboard, tablas de grupos, análisis interactivo, y el
