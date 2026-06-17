@@ -5,6 +5,16 @@ WORKDIR /srv
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# Headless Chromium + driver for the Selenium confirmed-lineup scraper. The
+# scraper degrades gracefully if absent, but the image ships them so the live
+# scrape works out of the box.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends chromium chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV CHROME_BIN=/usr/bin/chromium \
+    CHROMEDRIVER=/usr/bin/chromedriver
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
