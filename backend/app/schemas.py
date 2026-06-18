@@ -185,7 +185,11 @@ class PlayerOut(BaseModel):
     position_group: str
     age: int
     caps: int
+    starts: int
     international_goals: int
+    assists: int
+    yellow_cards: int
+    red_cards: int
     club: str
     xg90: float
     xa90: float
@@ -241,9 +245,11 @@ class PositionalBattleOut(BaseModel):
     side: str
     attacker: str
     attacker_position: str
+    attacker_age: int
     attacker_pps: float
     defender: Optional[str] = None
     defender_position: Optional[str] = None
+    defender_age: Optional[int] = None
     defender_pps: Optional[float] = None
     pms: float
     favored: str
@@ -281,6 +287,7 @@ class XiSlotOut(BaseModel):
     slot: str
     position: str
     player: str
+    age: int
     pps: float
 
 

@@ -124,6 +124,10 @@ const dictionaries = {
     pps: 'PPS',
     age: 'Age',
     caps: 'Caps',
+    starts: 'Starts',
+    assists: 'Assists',
+    yellowCards: 'Yellow cards',
+    redCards: 'Red cards',
     crunchingPlayers: 'Computing matchup…',
   },
   es: {
@@ -234,6 +238,10 @@ const dictionaries = {
     pps: 'PPS',
     age: 'Edad',
     caps: 'Partidos',
+    starts: 'Titularidades',
+    assists: 'Asistencias',
+    yellowCards: 'Tarjetas amarillas',
+    redCards: 'Tarjetas rojas',
     crunchingPlayers: 'Calculando enfrentamiento…',
   },
   pt: {
@@ -344,6 +352,10 @@ const dictionaries = {
     pps: 'PPS',
     age: 'Idade',
     caps: 'Jogos',
+    starts: 'Titularidades',
+    assists: 'Assistências',
+    yellowCards: 'Cartões amarelos',
+    redCards: 'Cartões vermelhos',
     crunchingPlayers: 'Calculando confronto…',
   },
 } as const;

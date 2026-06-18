@@ -22,6 +22,13 @@ export default function PlayerCard({ player }: { player: Player }) {
       <div className="player-meta">
         {t('age')} {player.age} · {player.club}
       </div>
+      <div className="player-meta player-stats-line">
+        {t('starts')} {player.starts} · {t('assists')} {player.assists} ·{' '}
+        <span title={t('yellowCards')}>🟨 {player.yellow_cards}</span>
+        {player.red_cards > 0 && (
+          <span title={t('redCards')}> · 🟥 {player.red_cards}</span>
+        )}
+      </div>
       <div className="pps-bar-row">
         <span className="pps-label">{t('pps')}</span>
         <div className="pps-track">

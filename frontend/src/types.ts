@@ -200,7 +200,11 @@ export interface Player {
   position_group: string;
   age: number;
   caps: number;
+  starts: number;
   international_goals: number;
+  assists: number;
+  yellow_cards: number;
+  red_cards: number;
   club: string;
   xg90: number;
   xa90: number;
@@ -241,9 +245,11 @@ export interface PositionalBattle {
   side: 'home' | 'away';
   attacker: string;
   attacker_position: string;
+  attacker_age: number;
   attacker_pps: number;
   defender: string | null;
   defender_position: string | null;
+  defender_age: number | null;
   defender_pps: number | null;
   pms: number;
   favored: 'home' | 'away';
@@ -263,6 +269,7 @@ export interface XiSlot {
   slot: string;
   position: string;
   player: string;
+  age: number;
   pps: number;
 }
 

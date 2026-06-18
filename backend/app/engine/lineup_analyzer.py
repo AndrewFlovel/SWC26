@@ -99,9 +99,11 @@ def _attacking_index(
         battles.append({
             "attacker": atk.name,
             "attacker_position": atk.position,
+            "attacker_age": atk.age,
             "attacker_pps": round(atk.pps, 4),
             "defender": primary.name if primary else None,
             "defender_position": primary.position if primary else None,
+            "defender_age": primary.age if primary else None,
             "defender_pps": round(primary.pps, 4) if primary else None,
             "pms": round(pms, 4),
         })
@@ -308,7 +310,7 @@ def optimal_xi(
             "formation": formation,
             "lineup": [
                 {"slot": s.label, "position": s.position, "player": p.name,
-                 "pps": round(p.pps, 4)}
+                 "age": p.age, "pps": round(p.pps, 4)}
                 for s, p in lineup
             ],
             "fsi": round(fsi, 4),

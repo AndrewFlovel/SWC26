@@ -152,6 +152,11 @@ class PlayerProfile:
     aerial_won_pct: float
     # Workload
     minutes_played: int
+    # Appearances / discipline season totals (defaulted)
+    starts: int = 0
+    assists: int = 0
+    yellow_cards: int = 0
+    red_cards: int = 0
     # Meta (defaulted)
     position_group: str = ""
     is_starter: bool = False
@@ -186,6 +191,9 @@ class PlayerProfile:
                 raise ValueError(f"{f} must be in [0, 100] for {self.name}.")
         if self.minutes_played < 0:
             raise ValueError(f"minutes_played must be >= 0 for {self.name}.")
+        for f in ("starts", "assists", "yellow_cards", "red_cards"):
+            if getattr(self, f) < 0:
+                raise ValueError(f"{f} must be >= 0 for {self.name}.")
 
     @classmethod
     def from_dict(cls, raw: dict, *, team: str = "", source: str = "seed") -> "PlayerProfile":
@@ -214,6 +222,10 @@ class PlayerProfile:
             pressures_won_pct=float(raw.get("pressures_won_pct", 0.0)),
             aerial_won_pct=float(raw.get("aerial_won_pct", 0.0)),
             minutes_played=int(raw.get("minutes_played", 0)),
+            starts=int(raw.get("starts", 0)),
+            assists=int(raw.get("assists", 0)),
+            yellow_cards=int(raw.get("yellow_cards", 0)),
+            red_cards=int(raw.get("red_cards", 0)),
             position_group=raw.get("position_group", ""),
             is_starter=bool(raw.get("is_starter", False)),
             injury_flag=bool(raw.get("injury_flag", False)),

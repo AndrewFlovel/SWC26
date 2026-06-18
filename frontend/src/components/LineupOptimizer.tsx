@@ -107,7 +107,9 @@ export default function LineupOptimizer(props: Props) {
               {c.lineup.map((s) => (
                 <span className="xi-slot" key={s.slot}>
                   <span className="xi-pos">{s.position}</span>
-                  <span className="xi-player">{s.player}</span>
+                  <span className="xi-player">
+                    {s.player} <span className="xi-age">({s.age})</span>
+                  </span>
                   <span className="xi-pps" style={{ color: ppsColor(s.pps) }}>
                     {s.pps.toFixed(2)}
                   </span>
