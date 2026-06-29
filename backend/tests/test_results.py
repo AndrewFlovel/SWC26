@@ -349,3 +349,67 @@ def test_scraped_result_does_not_overwrite_manual(monkeypatch):
     assert stored == 0
     assert results_store.get("A1")["goals_home"] == 1
     assert results_store.get("A1")["source"] == "manual"
+
+
+# ------------------------------------------------ mundial2026 results source
+
+def test_parse_matches_only_finished_and_aliased():
+    payload = [
+        {"homeTeam": {"name": "Sudáfrica"}, "awayTeam": {"name": "Canadá"},
+         "homeScore": 0, "awayScore": 1, "stage": "Dieciseisavos de Final"},
+        {"homeTeam": {"name": "España"}, "awayTeam": {"name": "Marruecos"},
+         "homeScore": 2, "awayScore": 0},
+        {"homeTeam": {"name": "Brasil"}, "awayTeam": {"name": "Japón"},
+         "homeScore": None, "awayScore": None},  # not played yet
+    ]
+    parsed = scraper._parse_matches(payload)
+    assert ("South Africa", "Canada", 0, 1) in parsed   # Spanish -> canonical
+    assert ("Spain", "Morocco", 2, 0) in parsed
+    assert len(parsed) == 2                              # unplayed dropped
+
+
+def test_parse_matches_tolerates_wrappers_and_garbage():
+    wrapped = {"results": [
+        {"homeTeam": {"name": "España"}, "awayTeam": {"name": "Francia"},
+         "homeScore": 1, "awayScore": 1},
+    ]}
+    assert scraper._parse_matches(wrapped) == [("Spain", "France", 1, 1)]
+    single = {"homeTeam": {"name": "España"}, "awayTeam": {"name": "Francia"},
+              "homeScore": 0, "awayScore": 0}
+    assert scraper._parse_matches(single) == [("Spain", "France", 0, 0)]
+    assert scraper._parse_matches("nonsense") == []
+    assert scraper._parse_matches([{"foo": "bar"}]) == []
+
+
+def test_fetch_match_results_maps_spanish_to_fixture(monkeypatch):
+    # A1 is Mexico vs South Africa; the source names them in Spanish.
+    payload = [{"homeTeam": {"name": "México"}, "awayTeam": {"name": "Sudáfrica"},
+                "homeScore": 3, "awayScore": 1, "stage": "Grupo A"}]
+
+    class FakeResp:
+        def raise_for_status(self): pass
+        def json(self): return payload
+
+    monkeypatch.setattr(scraper.requests, "get", lambda *a, **k: FakeResp())
+    stored = scraper._store_scraped_results(scraper.fetch_match_results(), [])
+    assert stored == 1
+    record = results_store.get("A1")
+    assert (record["goals_home"], record["goals_away"]) == (3, 1)
+    assert record["source"] == "scraped"
+
+
+def test_refresh_today_stores_mundial_results(monkeypatch):
+    payload = [{"homeTeam": {"name": "México"}, "awayTeam": {"name": "Sudáfrica"},
+                "homeScore": 2, "awayScore": 2, "stage": "Grupo A"}]
+
+    class FakeResp:
+        def raise_for_status(self): pass
+        def json(self): return payload
+
+    # eloratings.net unreachable -> elo best-effort empty; results still stored.
+    monkeypatch.setattr(scraper, "fetch_live_elo", lambda *a, **k: {})
+    monkeypatch.setattr(scraper.requests, "get", lambda *a, **k: FakeResp())
+    report = scraper.refresh_today()
+    assert report["status"] == "ok"
+    assert report["results_found"] == 1
+    assert results_store.get("A1")["source"] == "scraped"
