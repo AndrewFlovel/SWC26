@@ -1,5 +1,6 @@
 """Monte Carlo simulation of the 2026 group stage: single groups with FIFA
-tiebreakers and the full 12-group tournament with the best-8-thirds rule."""
+tiebreakers and the full 12-group tournament with the best-8-thirds rule, plus
+the knockout bracket (R32 -> final) with decisive single-elimination ties."""
 
 from __future__ import annotations
 
@@ -8,6 +9,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from . import bracket
 from .core import MatchContext, TeamProfile
 from .predictor import EloPoissonModel
 
@@ -32,6 +34,9 @@ class MonteCarloSimulator:
         self.model = model
         self._rng = np.random.default_rng(seed)
         self._cdf_cache: Dict[Tuple[str, str], Tuple[np.ndarray, int]] = {}
+        # Knockout ties run on a neutral context (no host edge); cache holds the
+        # neutral CDF plus the home win-share conditional on a decisive result.
+        self._ko_cache: Dict[Tuple[str, str], Tuple[np.ndarray, int, float]] = {}
 
     def _cdf(self, home: TeamProfile, away: TeamProfile) -> Tuple[np.ndarray, int]:
         """Cached cumulative scoreline distribution for O(log n) sampling."""
@@ -51,6 +56,41 @@ class MonteCarloSimulator:
         idx = int(np.searchsorted(cdf, self._rng.random()))
         idx = min(idx, cdf.size - 1)
         return divmod(idx, ncols)
+
+    def _ko_cdf(
+        self, home: TeamProfile, away: TeamProfile
+    ) -> Tuple[np.ndarray, int, float]:
+        """Neutral-venue CDF plus the home team's win probability conditional on
+        a decisive result (used to settle level knockout ties)."""
+        key = (home.name, away.name)
+        if key not in self._ko_cache:
+            matrix, _, _ = self.model.score_matrix(home, away)
+            p_home = float(np.tril(matrix, -1).sum())
+            p_away = float(np.triu(matrix, 1).sum())
+            decisive = p_home + p_away
+            split = p_home / decisive if decisive > 0 else 0.5
+            self._ko_cache[key] = (np.cumsum(matrix.ravel()), matrix.shape[1], split)
+        return self._ko_cache[key]
+
+    def _resolve_knockout(
+        self, home: TeamProfile, away: TeamProfile
+    ) -> Tuple[str, str]:
+        """Play a single-elimination tie to a decisive (winner, loser).
+
+        A level scoreline is settled as extra time / penalties: a coin flip
+        weighted by each side's strength (its win share given the match was
+        decided), so the stronger team is favoured but upsets remain possible.
+        """
+        cdf, ncols, split = self._ko_cdf(home, away)
+        idx = min(int(np.searchsorted(cdf, self._rng.random())), cdf.size - 1)
+        gh, ga = divmod(idx, ncols)
+        if gh > ga:
+            return home.name, away.name
+        if ga > gh:
+            return away.name, home.name
+        if self._rng.random() < split:
+            return home.name, away.name
+        return away.name, home.name
 
     @staticmethod
     def _rank_records(
@@ -202,4 +242,112 @@ class TournamentSimulator:
                     "qualify_r32_pct": round(100 * d["qualified"] / n_sims, 1),
                 })
         rows.sort(key=lambda r: r["qualify_r32_pct"], reverse=True)
+        return rows
+
+
+# Per-round flag: which match-number block a winner of that block has reached.
+_ROUND_OF = {
+    "reach_qf": range(89, 97),    # won an R16 tie
+    "reach_sf": range(97, 101),   # won a quarterfinal
+    "reach_final": range(101, 103),  # won a semifinal
+}
+
+
+class KnockoutSimulator:
+    """Plays the official FIFA 2026 bracket (R32 -> final) every iteration and
+    tallies how deep each team runs: reach R16/QF/SF/final and win the title.
+
+    Each run simulates the 12 groups (optionally conditioned on already-played
+    results), qualifies the 12 winners, 12 runners-up and 8 best thirds, seeds
+    them into the published bracket and resolves every tie decisively.
+    """
+
+    def __init__(
+        self,
+        model: EloPoissonModel,
+        draw: Dict[str, List[TeamProfile]],
+        seed: int = 2026,
+    ) -> None:
+        if len(draw) != 12:
+            raise ValueError("The 2026 World Cup has exactly 12 groups.")
+        self.mc = MonteCarloSimulator(model, seed=seed)
+        self.draw = draw
+        self._by_name = {t.name: t for teams in draw.values() for t in teams}
+
+    def _play_bracket(
+        self, seeded: Dict[int, Tuple[str, str]]
+    ) -> Tuple[Dict[int, str], Dict[int, str]]:
+        """Resolve R32 then the tree; return winners and losers by match."""
+        winners: Dict[int, str] = {}
+        losers: Dict[int, str] = {}
+        for match, (home, away) in seeded.items():
+            w, loser = self.mc._resolve_knockout(
+                self._by_name[home], self._by_name[away]
+            )
+            winners[match], losers[match] = w, loser
+
+        def team(ref: str) -> str:
+            src = winners if ref[0] == "W" else losers
+            return src[int(ref[1:])]
+
+        for tie in bracket.load_bracket()["tree"]:
+            home, away = team(tie["home"]), team(tie["away"])
+            w, loser = self.mc._resolve_knockout(
+                self._by_name[home], self._by_name[away]
+            )
+            winners[tie["match"]], losers[tie["match"]] = w, loser
+        return winners, losers
+
+    def simulate(
+        self,
+        n_sims: int = 5_000,
+        fixed_results: Optional[Dict[str, Dict[Tuple[str, str], Tuple[int, int]]]] = None,
+    ) -> List[dict]:
+        if n_sims <= 0:
+            raise ValueError("n_sims must be positive.")
+        fixed = fixed_results or {}
+        tally = {
+            n: {"reach_r16": 0, "reach_qf": 0, "reach_sf": 0,
+                "reach_final": 0, "champion": 0}
+            for n in self._by_name
+        }
+
+        for _ in range(n_sims):
+            group_order: Dict[str, List[str]] = {}
+            thirds: List[GroupRecord] = []
+            for g, teams in self.draw.items():
+                ranked = self.mc.simulate_group_once(teams, fixed.get(g) or None)
+                group_order[g] = [r.name for r in ranked]
+                thirds.append(ranked[2])
+            thirds.sort(key=lambda r: (r.pts, r.gd, r.gf, r.elo), reverse=True)
+            qualified = [self._by_name[r.name].group for r in thirds[:8]]
+
+            seeded = bracket.seed_r32(group_order, qualified)
+            winners, _ = self._play_bracket(seeded)
+
+            for match, name in winners.items():
+                if match <= 88:
+                    tally[name]["reach_r16"] += 1
+                elif match in _ROUND_OF["reach_qf"]:
+                    tally[name]["reach_qf"] += 1
+                elif match in _ROUND_OF["reach_sf"]:
+                    tally[name]["reach_sf"] += 1
+                elif match in _ROUND_OF["reach_final"]:
+                    tally[name]["reach_final"] += 1
+            tally[winners[104]]["champion"] += 1
+
+        rows = [
+            {
+                "team": name,
+                "group": self._by_name[name].group,
+                "elo": int(self._by_name[name].elo),
+                "reach_r16": round(100 * d["reach_r16"] / n_sims, 1),
+                "reach_qf": round(100 * d["reach_qf"] / n_sims, 1),
+                "reach_sf": round(100 * d["reach_sf"] / n_sims, 1),
+                "reach_final": round(100 * d["reach_final"] / n_sims, 1),
+                "champion": round(100 * d["champion"] / n_sims, 1),
+            }
+            for name, d in tally.items()
+        ]
+        rows.sort(key=lambda r: (r["champion"], r["reach_final"]), reverse=True)
         return rows

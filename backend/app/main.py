@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .engine import (
     EloPoissonModel,
+    KnockoutSimulator,
     MatchContext,
     MatchPredictor,
     MonteCarloSimulator,
@@ -22,16 +23,21 @@ from .engine import (
     analyze_lineups,
     build_lineup,
     optimal_xi,
+    seed_r32,
 )
+from .engine.bracket import load_bracket
 from .engine.player_models import FORMATIONS
 from .engine.loader import GROUPS, get_fixtures, load_teams
 from .schemas import (
     AdjustedTeamOut,
+    BracketProjectionResponse,
     FixtureOut,
     GroupOut,
     FormationSlotOut,
     GroupSimRequest,
     GroupSimResponse,
+    KnockoutSimRequest,
+    KnockoutSimResponse,
     LineupAnalysisRequest,
     LineupAnalysisResponse,
     OptimalXiRequest,
@@ -176,6 +182,78 @@ def simulate_group(req: GroupSimRequest) -> dict:
 def simulate_tournament(req: TournamentSimRequest) -> dict:
     sim = TournamentSimulator(_model, get_adjusted_draw(), seed=2026)
     return {"n_sims": req.n_sims, "table": sim.simulate(n_sims=req.n_sims)}
+
+
+def _all_groups_fixed_results() -> dict:
+    """group -> {(home, away): (gh, ga)} for every group with recorded finals."""
+    out = {}
+    for g in GROUPS:
+        fixed = _group_fixed_results(g)
+        if fixed:
+            out[g] = fixed
+    return out
+
+
+@app.post("/api/simulate/knockout", response_model=KnockoutSimResponse)
+def simulate_knockout(req: KnockoutSimRequest) -> dict:
+    """Title-odds Monte Carlo: plays the full bracket each run and reports every
+    team's probability of reaching R16/QF/SF/the final and winning the cup."""
+    fixed = _all_groups_fixed_results() if req.use_results else None
+    sim = KnockoutSimulator(_model, get_adjusted_draw(), seed=2026)
+    return {"n_sims": req.n_sims, "table": sim.simulate(n_sims=req.n_sims, fixed_results=fixed)}
+
+
+@app.get("/api/bracket/projection", response_model=BracketProjectionResponse)
+def bracket_projection(use_results: bool = True) -> dict:
+    """The single most-likely bracket: project each group's standings, seed the
+    official R32 slots, then resolve every tie by the higher predicted win
+    probability. Each tie is fully predictable on demand via /api/predict."""
+    draw = get_adjusted_draw()
+    teams = get_adjusted_teams()
+    sim = MonteCarloSimulator(_model, seed=2026)
+    fixed_all = _all_groups_fixed_results() if use_results else {}
+
+    group_order: dict[str, list[str]] = {}
+    thirds: list[tuple] = []  # (avg_points, group, third_name)
+    for g in GROUPS:
+        rows = sim.simulate_group(
+            draw[g], n_sims=3000, fixed_results=fixed_all.get(g) or None
+        )
+        ordered = sorted(
+            rows, key=lambda r: (r["avg_points"], r["win_group_pct"]), reverse=True
+        )
+        group_order[g] = [r["team"] for r in ordered]
+        thirds.append((ordered[2]["avg_points"], g, ordered[2]["team"]))
+    thirds.sort(reverse=True)
+    qualified = [g for _, g, _ in thirds[:8]]
+
+    seeded = seed_r32(group_order, qualified)
+    winners: dict[int, str] = {}
+    losers: dict[int, str] = {}
+    ties: list[dict] = []
+
+    def resolve(match: int, rnd: str, home: str, away: str) -> None:
+        pred = _predictor.predict(teams[home], teams[away])
+        winner = home if pred.p_home >= pred.p_away else away
+        winners[match] = winner
+        losers[match] = away if winner == home else home
+        ties.append({
+            "match": match, "round": rnd, "home": home, "away": away,
+            "p_home": pred.p_home, "p_away": pred.p_away, "winner": winner,
+        })
+
+    for match in sorted(seeded):
+        home, away = seeded[match]
+        resolve(match, "R32", home, away)
+
+    def ref(token: str) -> str:
+        return (winners if token[0] == "W" else losers)[int(token[1:])]
+
+    for tie in load_bracket()["tree"]:
+        resolve(tie["match"], tie["round"], ref(tie["home"]), ref(tie["away"]))
+
+    ties.sort(key=lambda t: t["match"])
+    return {"use_results": use_results, "ties": ties}
 
 
 def _fixtures_by_id() -> dict:

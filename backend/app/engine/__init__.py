@@ -18,8 +18,9 @@ from .lineup_analyzer import (
 )
 from .player_models import FORMATIONS, POSITIONS, PlayerProfile, Slot
 from .player_scorer import player_performance_score, score_squad
+from .bracket import seed_r32
 from .predictor import EloPoissonModel, MatchPredictor, MatchPrediction
-from .simulator import MonteCarloSimulator, TournamentSimulator
+from .simulator import KnockoutSimulator, MonteCarloSimulator, TournamentSimulator
 
 __all__ = [
     "AdjustmentConfig",
@@ -36,6 +37,8 @@ __all__ = [
     "MatchPrediction",
     "MonteCarloSimulator",
     "TournamentSimulator",
+    "KnockoutSimulator",
+    "seed_r32",
     # Player analyzer
     "PlayerProfile",
     "Slot",

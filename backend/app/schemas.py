@@ -152,6 +152,12 @@ class AdjustedTeamOut(BaseModel):
     base_form: float
     adjusted_form: float
     form_delta: float
+    base_xg: float
+    adjusted_xg: float
+    xg_delta: float
+    base_xga: float
+    adjusted_xga: float
+    xga_delta: float
     matches_played: int
 
 
@@ -172,6 +178,45 @@ class TournamentSimRow(BaseModel):
 class TournamentSimResponse(BaseModel):
     n_sims: int
     table: List[TournamentSimRow]
+
+
+class KnockoutSimRequest(BaseModel):
+    n_sims: int = Field(default=4000, ge=100, le=10000)
+    use_results: bool = Field(
+        default=True,
+        description="Condition the group stage on recorded final results.",
+    )
+
+
+class KnockoutSimRow(BaseModel):
+    team: str
+    group: str
+    elo: int
+    reach_r16: float
+    reach_qf: float
+    reach_sf: float
+    reach_final: float
+    champion: float
+
+
+class KnockoutSimResponse(BaseModel):
+    n_sims: int
+    table: List[KnockoutSimRow]
+
+
+class BracketTie(BaseModel):
+    match: int
+    round: str            # "R32" | "R16" | "QF" | "SF" | "3P" | "F"
+    home: str
+    away: str
+    p_home: float
+    p_away: float
+    winner: str
+
+
+class BracketProjectionResponse(BaseModel):
+    use_results: bool
+    ties: List[BracketTie]
 
 
 # --------------------------------------------------------------------------- #

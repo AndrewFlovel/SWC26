@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchMatches, fetchTeams } from './api/client';
 import GroupTable from './components/GroupTable';
+import KnockoutBracket from './components/KnockoutBracket';
 import LanguageSelector from './components/LanguageSelector';
 import MatchAnalysis from './components/MatchAnalysis';
 import MatchList from './components/MatchList';
@@ -19,7 +20,7 @@ export default function App() {
   const [group, setGroup] = useState('A');
   const [selected, setSelected] = useState<Fixture | null>(null);
   const [deepFixture, setDeepFixture] = useState<Fixture | null>(null);
-  const [view, setView] = useState<'analysis' | 'results'>('analysis');
+  const [view, setView] = useState<'analysis' | 'results' | 'knockout'>('analysis');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,6 +68,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            className={view === 'knockout' ? 'on' : ''}
+            onClick={() => setView('knockout')}
+          >
+            {t('navKnockout')}
+          </button>
+          <button
+            type="button"
             className={view === 'results' ? 'on' : ''}
             onClick={() => setView('results')}
           >
@@ -74,7 +82,7 @@ export default function App() {
           </button>
         </div>
 
-        {view === 'analysis' ? (
+        {view === 'analysis' && (
           <>
             <h2 className="section-title">{t('sectionGroups')}</h2>
             <div className="group-chips">
@@ -96,9 +104,11 @@ export default function App() {
             <h2 className="section-title">{t('sectionOdds')}</h2>
             <GroupTable group={group} />
           </>
-        ) : (
-          <ResultsControl />
         )}
+
+        {view === 'knockout' && <KnockoutBracket teams={teams} />}
+
+        {view === 'results' && <ResultsControl />}
 
         <div className="footnote">
           <b>SWC26</b> · {t('footnote')}

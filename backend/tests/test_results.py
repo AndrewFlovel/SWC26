@@ -12,6 +12,7 @@ from app.engine.adjuster import (
     apply_results,
     elo_delta,
     update_form,
+    update_rate,
 )
 from app.engine.loader import get_fixtures, load_teams
 from app.main import app
@@ -84,9 +85,10 @@ def test_apply_results_deterministic_and_zero_sum():
     lost = once[away].elo - base[away].elo
     assert gained == pytest.approx(-lost)
     assert gained > 0
-    # Untouched metrics stay untouched.
-    assert once[home].xg_avg == base[home].xg_avg
+    # Played team's attack rate moves; unplayed teams stay at their base values.
+    assert once[home].xg_avg != base[home].xg_avg
     assert once["Spain"].elo == base["Spain"].elo
+    assert once["Spain"].xg_avg == base["Spain"].xg_avg
 
 
 def test_apply_results_ignores_live():
@@ -197,6 +199,50 @@ def test_adjusted_metrics_reflect_result():
     assert rows[fixture["home"]]["matches_played"] == 1
     assert rows[fixture["away"]]["elo_delta"] < 0
     assert rows["Spain"]["elo_delta"] == 0
+
+
+def test_update_rate_direction_and_clamp():
+    # EMA moves toward the match's goal count.
+    assert update_rate(1.30, 4, CFG) > 1.30
+    assert update_rate(1.30, 0, CFG) < 1.30
+    # Clamped to the configured band even under extreme inputs.
+    assert update_rate(CFG.xg_max, 20, CFG) == CFG.xg_max
+    assert update_rate(CFG.xg_min, 0, CFG) == CFG.xg_min
+
+
+def test_adjusted_metrics_reflect_xg():
+    fixture = next(f for f in get_fixtures() if f["id"] == "A1")
+    base = {t.name: t for t in load_teams().values()}
+    client.put(
+        "/api/results/A1",
+        json={"goals_home": 4, "goals_away": 0, "status": "final"},
+    )
+    rows = {r["team"]: r for r in client.get("/api/metrics/adjusted").json()}
+    home, away = fixture["home"], fixture["away"]
+    # Home scored a lot, conceded none: attack rate up, defense rate down.
+    assert rows[home]["xg_delta"] > 0
+    assert rows[home]["xga_delta"] < 0
+    # Away is the mirror image.
+    assert rows[away]["xg_delta"] < 0
+    assert rows[away]["xga_delta"] > 0
+    # An unplayed team is untouched.
+    assert rows["Spain"]["xg_delta"] == 0
+    assert rows["Spain"]["xga_delta"] == 0
+    # Base values are the immutable teams.json snapshot.
+    assert rows[home]["base_xg"] == round(base[home].xg_avg, 2)
+
+
+def test_xg_replay_is_idempotent():
+    fixtures = get_fixtures()
+    results = {
+        "A1": {"goals_home": 2, "goals_away": 1, "status": "final"},
+        "A2": {"goals_home": 0, "goals_away": 3, "status": "final"},
+    }
+    once = apply_results(load_teams(), fixtures, results, CFG)
+    twice = apply_results(load_teams(), fixtures, results, CFG)
+    for name, prof in once.items():
+        assert prof.xg_avg == twice[name].xg_avg
+        assert prof.xga_avg == twice[name].xga_avg
 
 
 def test_prediction_uses_adjusted_elo():

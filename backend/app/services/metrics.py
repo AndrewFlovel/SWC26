@@ -62,6 +62,12 @@ def metrics_report() -> List[dict]:
             "base_form": round(base[name].form_index, 3),
             "adjusted_form": round(adj.form_index, 3),
             "form_delta": round(adj.form_index - base[name].form_index, 3),
+            "base_xg": round(base[name].xg_avg, 2),
+            "adjusted_xg": round(adj.xg_avg, 2),
+            "xg_delta": round(adj.xg_avg - base[name].xg_avg, 2),
+            "base_xga": round(base[name].xga_avg, 2),
+            "adjusted_xga": round(adj.xga_avg, 2),
+            "xga_delta": round(adj.xga_avg - base[name].xga_avg, 2),
             "matches_played": played.get(name, 0),
         }
         for name, adj in adjusted.items()

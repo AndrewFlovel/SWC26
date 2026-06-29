@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
   AdjustedTeam,
+  BracketProjection,
   Fixture,
   FormationMap,
   GroupEntry,
   GroupSimResponse,
+  KnockoutSimResponse,
   LineupAnalysis,
   MatchResult,
   OptimalXiResponse,
@@ -54,6 +56,17 @@ export const fetchGroupSim = (group: string, nSims = 3000) =>
     method: 'POST',
     body: JSON.stringify({ group, n_sims: nSims }),
   });
+
+export const fetchKnockoutSim = (nSims = 4000, useResults = true) =>
+  request<KnockoutSimResponse>('/api/simulate/knockout', {
+    method: 'POST',
+    body: JSON.stringify({ n_sims: nSims, use_results: useResults }),
+  });
+
+export const fetchBracketProjection = (useResults = true) =>
+  request<BracketProjection>(
+    `/api/bracket/projection?use_results=${useResults}`,
+  );
 
 export const fetchResults = () => request<MatchResult[]>('/api/results');
 

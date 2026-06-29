@@ -30,6 +30,8 @@ export default function MetricsPanel({ metrics }: { metrics: AdjustedTeam[] }) {
               <th>{t('adjustedElo')}</th>
               <th>{t('eloDelta')}</th>
               <th>{t('formDelta')}</th>
+              <th>{t('xgDelta')}</th>
+              <th>{t('xgaDelta')}</th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +49,13 @@ export default function MetricsPanel({ metrics }: { metrics: AdjustedTeam[] }) {
                 </td>
                 <td style={{ color: deltaColor(m.form_delta) }}>
                   {signed(m.form_delta, 3)}
+                </td>
+                <td style={{ color: deltaColor(m.xg_delta) }}>
+                  {signed(m.xg_delta, 2)}
+                </td>
+                {/* xGA: conceding fewer than baseline is an improvement */}
+                <td style={{ color: deltaColor(-m.xga_delta) }}>
+                  {signed(m.xga_delta, 2)}
                 </td>
               </tr>
             ))}

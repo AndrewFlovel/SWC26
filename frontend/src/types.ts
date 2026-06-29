@@ -133,7 +133,46 @@ export interface AdjustedTeam {
   base_form: number;
   adjusted_form: number;
   form_delta: number;
+  base_xg: number;
+  adjusted_xg: number;
+  xg_delta: number;
+  base_xga: number;
+  adjusted_xga: number;
+  xga_delta: number;
   matches_played: number;
+}
+
+export interface KnockoutSimRow {
+  team: string;
+  group: string;
+  elo: number;
+  reach_r16: number;
+  reach_qf: number;
+  reach_sf: number;
+  reach_final: number;
+  champion: number;
+}
+
+export interface KnockoutSimResponse {
+  n_sims: number;
+  table: KnockoutSimRow[];
+}
+
+export type BracketRound = 'R32' | 'R16' | 'QF' | 'SF' | '3P' | 'F';
+
+export interface BracketTie {
+  match: number;
+  round: BracketRound;
+  home: string;
+  away: string;
+  p_home: number;
+  p_away: number;
+  winner: string;
+}
+
+export interface BracketProjection {
+  use_results: boolean;
+  ties: BracketTie[];
 }
 
 export const FLAGS: Record<string, string> = {

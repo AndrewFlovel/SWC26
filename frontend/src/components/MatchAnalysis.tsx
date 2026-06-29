@@ -12,7 +12,8 @@ interface Props {
   fixture: Fixture;
   teams: Record<string, Team>;
   onClose: () => void;
-  onDeepAnalyze: () => void;
+  /** Optional: when omitted (e.g. knockout ties) the deep-dive link is hidden. */
+  onDeepAnalyze?: () => void;
 }
 
 interface SliderProps {
@@ -112,9 +113,11 @@ export default function MatchAnalysis({ fixture, teams, onClose, onDeepAnalyze }
               {loading && <span className="loading-pulse" />}
             </h2>
             <div className="analysis-head-actions">
-              <button type="button" className="deep-link" onClick={onDeepAnalyze}>
-                {t('deepAnalysis')}
-              </button>
+              {onDeepAnalyze && (
+                <button type="button" className="deep-link" onClick={onDeepAnalyze}>
+                  {t('deepAnalysis')}
+                </button>
+              )}
               <button type="button" className="close" onClick={onClose} aria-label={t('close')}>
                 ✕
               </button>

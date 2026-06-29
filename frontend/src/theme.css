@@ -1374,3 +1374,94 @@ table.battle-table td {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+
+/* --------------------------------------------------------------------------- */
+/* Knockout bracket                                                            */
+/* --------------------------------------------------------------------------- */
+
+.bracket-desc {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 0 0 16px;
+  max-width: 70ch;
+}
+
+.bracket {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  align-items: stretch;
+}
+
+.bracket-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 12px;
+  min-width: 200px;
+  flex: 1;
+}
+
+.bracket-round-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--blood);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.bracket-tie {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.bracket-tie:hover {
+  border-color: var(--blood);
+  transform: translateY(-1px);
+}
+
+.bt-side {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.bt-side.bt-win {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.bt-team {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-pct {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.bt-side.bt-win .bt-pct {
+  color: var(--gold);
+}
+
+.bracket-third {
+  margin-top: 18px;
+}
