@@ -212,6 +212,12 @@ class BracketTie(BaseModel):
     p_home: float
     p_away: float
     winner: str
+    source: str = "projected"        # "projected" | "scraped"
+    status: str = "scheduled"        # "scheduled" | "final"
+    goals_home: Optional[int] = None
+    goals_away: Optional[int] = None
+    pens_home: Optional[int] = None
+    pens_away: Optional[int] = None
 
 
 class BracketProjectionResponse(BaseModel):

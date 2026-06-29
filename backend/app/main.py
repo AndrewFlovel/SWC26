@@ -57,6 +57,7 @@ from .schemas import (
 from .services import fbref_index, player_scraper, scraper
 from .services.metrics import get_adjusted_draw, get_adjusted_teams, metrics_report
 from .services.player_store import get_squad, player_store, squad_index, team_slug
+from .services.knockout_store import knockout_store, winner_of
 from .services.results_store import results_store
 
 app = FastAPI(
@@ -150,15 +151,19 @@ def predict(req: PredictRequest) -> dict:
 
 
 def _group_fixed_results(group: str) -> dict:
-    """(home, away) -> (gh, ga) for the group's recorded final results."""
+    """(home, away) -> (gh, ga) for the group's recorded final results, keyed in
+    BOTH orientations. The simulator looks pairs up in group-draw order, which
+    need not match the fixture's home/away orientation; without the reversed key
+    those matches silently fall through to random sampling and the conditioned
+    standings come out wrong."""
     stored = results_store.all()
     fixed = {}
     for f in get_fixtures():
         record = stored.get(f["id"])
         if f["group"] == group and record and record["status"] == "final":
-            fixed[(f["home"], f["away"])] = (
-                record["goals_home"], record["goals_away"],
-            )
+            gh, ga = record["goals_home"], record["goals_away"]
+            fixed[(f["home"], f["away"])] = (gh, ga)
+            fixed[(f["away"], f["home"])] = (ga, gh)
     return fixed
 
 
@@ -173,7 +178,8 @@ def simulate_group(req: GroupSimRequest) -> dict:
     return {
         "group": req.group,
         "n_sims": req.n_sims,
-        "played": len(fixed),
+        # fixed holds both orientations per match; count distinct pairings.
+        "played": len({frozenset(k) for k in fixed}),
         "table": table,
     }
 
@@ -194,13 +200,28 @@ def _all_groups_fixed_results() -> dict:
     return out
 
 
+def _fixed_knockout() -> dict[int, str]:
+    """Recorded knockout winners by match number (goals, penalties tie-break)."""
+    out: dict[int, str] = {}
+    for key, rec in knockout_store.all().items():
+        w = winner_of(rec)
+        if w is not None:
+            out[int(key)] = w
+    return out
+
+
 @app.post("/api/simulate/knockout", response_model=KnockoutSimResponse)
 def simulate_knockout(req: KnockoutSimRequest) -> dict:
     """Title-odds Monte Carlo: plays the full bracket each run and reports every
-    team's probability of reaching R16/QF/SF/the final and winning the cup."""
+    team's probability of reaching R16/QF/SF/the final and winning the cup.
+    Already-decided knockout ties are locked to their recorded winners."""
     fixed = _all_groups_fixed_results() if req.use_results else None
+    fixed_ko = _fixed_knockout() if req.use_results else None
     sim = KnockoutSimulator(_model, get_adjusted_draw(), seed=2026)
-    return {"n_sims": req.n_sims, "table": sim.simulate(n_sims=req.n_sims, fixed_results=fixed)}
+    return {
+        "n_sims": req.n_sims,
+        "table": sim.simulate(n_sims=req.n_sims, fixed_results=fixed, fixed_ko=fixed_ko),
+    }
 
 
 @app.get("/api/bracket/projection", response_model=BracketProjectionResponse)
@@ -228,19 +249,36 @@ def bracket_projection(use_results: bool = True) -> dict:
     qualified = [g for _, g, _ in thirds[:8]]
 
     seeded = seed_r32(group_order, qualified)
+    persisted = knockout_store.all() if use_results else {}
     winners: dict[int, str] = {}
     losers: dict[int, str] = {}
     ties: list[dict] = []
 
     def resolve(match: int, rnd: str, home: str, away: str) -> None:
+        # A scraped matchup (real teams) takes precedence over the projection;
+        # a scraped final additionally locks the winner and carries the score.
+        rec = persisted.get(str(match))
+        if rec:
+            home, away = rec["home"], rec["away"]
         pred = _predictor.predict(teams[home], teams[away])
-        winner = home if pred.p_home >= pred.p_away else away
+        tie: dict = {
+            "match": match, "round": rnd, "home": home, "away": away,
+            "p_home": pred.p_home, "p_away": pred.p_away,
+            "source": "scraped" if rec else "projected",
+            "status": "scheduled",
+        }
+        if rec and rec["status"] == "final":
+            winner = winner_of(rec) or (home if pred.p_home >= pred.p_away else away)
+            tie.update(
+                status="final", goals_home=rec["goals_home"], goals_away=rec["goals_away"],
+                pens_home=rec["pens_home"], pens_away=rec["pens_away"],
+            )
+        else:
+            winner = home if pred.p_home >= pred.p_away else away
+        tie["winner"] = winner
         winners[match] = winner
         losers[match] = away if winner == home else home
-        ties.append({
-            "match": match, "round": rnd, "home": home, "away": away,
-            "p_home": pred.p_home, "p_away": pred.p_away, "winner": winner,
-        })
+        ties.append(tie)
 
     for match in sorted(seeded):
         home, away = seeded[match]

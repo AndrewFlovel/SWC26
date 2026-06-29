@@ -274,17 +274,28 @@ class KnockoutSimulator:
         self.draw = draw
         self._by_name = {t.name: t for teams in draw.values() for t in teams}
 
+    def _settle(
+        self, match: int, home: str, away: str, fixed_ko: Dict[int, str]
+    ) -> Tuple[str, str]:
+        """Winner/loser of one tie: the actual result when the match is in
+        `fixed_ko` (and its winner is one of these two teams), else simulated."""
+        forced = fixed_ko.get(match)
+        if forced in (home, away):
+            return forced, (away if forced == home else home)
+        return self.mc._resolve_knockout(self._by_name[home], self._by_name[away])
+
     def _play_bracket(
-        self, seeded: Dict[int, Tuple[str, str]]
+        self,
+        seeded: Dict[int, Tuple[str, str]],
+        fixed_ko: Optional[Dict[int, str]] = None,
     ) -> Tuple[Dict[int, str], Dict[int, str]]:
-        """Resolve R32 then the tree; return winners and losers by match."""
+        """Resolve R32 then the tree; return winners and losers by match.
+        Matches present in `fixed_ko` are locked to their recorded winner."""
+        fixed_ko = fixed_ko or {}
         winners: Dict[int, str] = {}
         losers: Dict[int, str] = {}
         for match, (home, away) in seeded.items():
-            w, loser = self.mc._resolve_knockout(
-                self._by_name[home], self._by_name[away]
-            )
-            winners[match], losers[match] = w, loser
+            winners[match], losers[match] = self._settle(match, home, away, fixed_ko)
 
         def team(ref: str) -> str:
             src = winners if ref[0] == "W" else losers
@@ -292,20 +303,21 @@ class KnockoutSimulator:
 
         for tie in bracket.load_bracket()["tree"]:
             home, away = team(tie["home"]), team(tie["away"])
-            w, loser = self.mc._resolve_knockout(
-                self._by_name[home], self._by_name[away]
+            winners[tie["match"]], losers[tie["match"]] = self._settle(
+                tie["match"], home, away, fixed_ko
             )
-            winners[tie["match"]], losers[tie["match"]] = w, loser
         return winners, losers
 
     def simulate(
         self,
         n_sims: int = 5_000,
         fixed_results: Optional[Dict[str, Dict[Tuple[str, str], Tuple[int, int]]]] = None,
+        fixed_ko: Optional[Dict[int, str]] = None,
     ) -> List[dict]:
         if n_sims <= 0:
             raise ValueError("n_sims must be positive.")
         fixed = fixed_results or {}
+        fixed_ko = fixed_ko or {}
         tally = {
             n: {"reach_r16": 0, "reach_qf": 0, "reach_sf": 0,
                 "reach_final": 0, "champion": 0}
@@ -323,7 +335,7 @@ class KnockoutSimulator:
             qualified = [self._by_name[r.name].group for r in thirds[:8]]
 
             seeded = bracket.seed_r32(group_order, qualified)
-            winners, _ = self._play_bracket(seeded)
+            winners, _ = self._play_bracket(seeded, fixed_ko)
 
             for match, name in winners.items():
                 if match <= 88:

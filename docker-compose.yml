@@ -15,6 +15,7 @@ services:
     # requests — see .env.example.
     environment:
       - MUNDIAL_RESULTS_URL
+      - MUNDIAL_FIXTURES_URL
       - MUNDIAL_COOKIE
       - MUNDIAL_TOKEN
     restart: unless-stopped

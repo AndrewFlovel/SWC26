@@ -17,6 +17,7 @@ from app.engine.adjuster import (
 from app.engine.loader import get_fixtures, load_teams
 from app.main import app
 from app.services import scraper
+from app.services.knockout_store import knockout_store
 from app.services.results_store import ResultsStore, results_store
 
 client = TestClient(app)
@@ -35,6 +36,18 @@ def isolated_store(tmp_path):
     results_store.path = original_path
     results_store._records = original_records
     results_store._version += 1
+
+
+@pytest.fixture(autouse=True)
+def isolated_knockout_store(tmp_path):
+    """Isolate the knockout store so scraper tests never touch the real file."""
+    ks = knockout_store
+    original_path, original_records = ks.path, ks._records
+    ks.path = tmp_path / "knockout_results.json"
+    ks._records = {}
+    yield ks
+    ks.path = original_path
+    ks._records = original_records
 
 
 # ---------------------------------------------------------------- fixtures
@@ -413,3 +426,104 @@ def test_refresh_today_stores_mundial_results(monkeypatch):
     assert report["status"] == "ok"
     assert report["results_found"] == 1
     assert results_store.get("A1")["source"] == "scraped"
+
+
+# ----------------------------------------------- mundial2026 knockout source
+
+def test_parse_knockout_maps_ids_penalties_and_finished():
+    payload = [
+        {"id": 73, "stage": "Dieciseisavos de Final",
+         "homeTeam": {"name": "Sudáfrica"}, "awayTeam": {"name": "Canadá"},
+         "homeScore": 1, "awayScore": 1, "homePenalties": 4, "awayPenalties": 2},
+        {"id": 104, "stage": "Final",
+         "homeTeam": {"name": "España"}, "awayTeam": {"name": "Francia"},
+         "homeScore": None, "awayScore": None},      # final not played yet
+        {"id": 5, "stage": "Grupo A",                 # group game, not knockout
+         "homeTeam": {"name": "México"}, "awayTeam": {"name": "Sudáfrica"},
+         "homeScore": 1, "awayScore": 0},
+    ]
+    by_match = {p["match"]: p for p in scraper._parse_knockout(payload)}
+    assert set(by_match) == {73, 104}                 # only ids 73-104
+    assert (by_match[73]["home"], by_match[73]["away"]) == ("South Africa", "Canada")
+    assert by_match[73]["finished"] is True
+    assert (by_match[73]["pens_home"], by_match[73]["pens_away"]) == (4, 2)
+    assert by_match[104]["finished"] is False
+
+
+def test_parse_knockout_rejects_stage_id_mismatch():
+    payload = [{"id": 73, "stage": "Final",            # id 73 is R32, not the Final
+                "homeTeam": {"name": "España"}, "awayTeam": {"name": "Francia"},
+                "homeScore": 0, "awayScore": 0}]
+    assert scraper._parse_knockout(payload) == []
+
+
+def test_store_scraped_knockout_skips_undrawn_and_persists_real():
+    parsed = [
+        {"match": 73, "home": "Spain", "away": "France",
+         "goals_home": 2, "goals_away": 1, "pens_home": None, "pens_away": None,
+         "finished": True},
+        {"match": 74, "home": None, "away": "Brazil",   # slot not drawn yet
+         "goals_home": None, "goals_away": None, "pens_home": None, "pens_away": None,
+         "finished": False},
+    ]
+    messages = []
+    stored = scraper._store_scraped_knockout(parsed, messages)
+    assert stored == 1
+    rec = knockout_store.get(73)
+    assert rec["status"] == "final" and rec["source"] == "scraped"
+    assert knockout_store.get(74) is None             # undrawn slot left to projection
+    assert any("not yet drawn" in m for m in messages)
+
+
+def test_store_scraped_knockout_does_not_overwrite_manual():
+    knockout_store.upsert(73, "Spain", "France", 1, 0, status="final", source="manual")
+    parsed = [{"match": 73, "home": "Spain", "away": "France",
+               "goals_home": 5, "goals_away": 0, "pens_home": None, "pens_away": None,
+               "finished": True}]
+    assert scraper._store_scraped_knockout(parsed, []) == 0
+    assert knockout_store.get(73)["goals_home"] == 1
+    assert knockout_store.get(73)["source"] == "manual"
+
+
+def _ko(match, home, away, gh=None, ga=None, finished=False):
+    return {"match": match, "home": home, "away": away, "goals_home": gh,
+            "goals_away": ga, "pens_home": None, "pens_away": None, "finished": finished}
+
+
+def test_merge_knockout_prefers_finished_over_scheduled():
+    scheduled = [_ko(73, "Spain", "France")]
+    finished = [_ko(73, "Spain", "France", 1, 0, finished=True)]
+    for order in ((finished, scheduled), (scheduled, finished)):
+        merged = {m["match"]: m for m in scraper._merge_knockout(*order)}
+        assert merged[73]["finished"] is True  # result wins regardless of order
+
+
+def test_store_scraped_knockout_keeps_final_over_later_scheduled():
+    knockout_store.upsert(73, "Spain", "France", 1, 0, status="final", source="scraped")
+    assert scraper._store_scraped_knockout([_ko(73, "Spain", "France")], []) == 0
+    assert knockout_store.get(73)["status"] == "final"
+
+
+def test_refresh_today_picks_up_upcoming_knockout_fixtures(monkeypatch):
+    # Results endpoint has no knockout games today; the all-matches feed carries
+    # the real, not-yet-played R32 fixture.
+    fixtures = [{"id": 74, "stage": "Dieciseisavos de Final",
+                 "homeTeam": {"name": "Alemania"}, "awayTeam": {"name": "Paraguay"},
+                 "homeScore": None, "awayScore": None}]
+
+    class FakeResp:
+        def __init__(self, data): self._data = data
+        def raise_for_status(self): pass
+        def json(self): return self._data
+
+    def fake_get(url, *a, **k):
+        return FakeResp(fixtures if url == scraper.MUNDIAL_FIXTURES_URL else [])
+
+    monkeypatch.setattr(scraper, "fetch_live_elo", lambda *a, **k: {})
+    monkeypatch.setattr(scraper.requests, "get", fake_get)
+    report = scraper.refresh_today()
+    assert report["status"] == "ok"
+    rec = knockout_store.get(74)
+    assert rec is not None
+    assert (rec["home"], rec["away"]) == ("Germany", "Paraguay")
+    assert rec["status"] == "scheduled" and rec["source"] == "scraped"

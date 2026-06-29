@@ -45,23 +45,42 @@ function neutralFixture(tie: BracketTie, roundName: string): Fixture {
   };
 }
 
+/** A side's cell value: real score (with penalties) when final, else win %. */
+function sideScore(goals: number | null, pens: number | null, pct: number): string {
+  if (goals === null) return `${pct}%`;
+  return pens === null ? `${goals}` : `${goals} (${pens})`;
+}
+
 function TieCard({ tie, onClick }: { tie: BracketTie; onClick: () => void }) {
+  const { t } = useI18n();
   const homeWins = tie.winner === tie.home;
-  const homePct = Math.round(tie.p_home * 100);
-  const awayPct = Math.round(tie.p_away * 100);
+  const isFinal = tie.status === 'final';
+  const homeCell = isFinal
+    ? sideScore(tie.goals_home, tie.pens_home, Math.round(tie.p_home * 100))
+    : `${Math.round(tie.p_home * 100)}%`;
+  const awayCell = isFinal
+    ? sideScore(tie.goals_away, tie.pens_away, Math.round(tie.p_away * 100))
+    : `${Math.round(tie.p_away * 100)}%`;
   return (
-    <button type="button" className="bracket-tie" onClick={onClick}>
+    <button
+      type="button"
+      className={`bracket-tie ${tie.source === 'scraped' ? 'bracket-tie-real' : ''}`}
+      onClick={onClick}
+    >
+      {tie.source === 'scraped' && (
+        <span className="bt-badge">{t(isFinal ? 'bracketFinal' : 'bracketDrawn')}</span>
+      )}
       <span className={`bt-side ${homeWins ? 'bt-win' : ''}`}>
         <span className="bt-team">
           {flag(tie.home)} {tie.home}
         </span>
-        <span className="bt-pct">{homePct}%</span>
+        <span className="bt-pct">{homeCell}</span>
       </span>
       <span className={`bt-side ${!homeWins ? 'bt-win' : ''}`}>
         <span className="bt-team">
           {flag(tie.away)} {tie.away}
         </span>
-        <span className="bt-pct">{awayPct}%</span>
+        <span className="bt-pct">{awayCell}</span>
       </span>
     </button>
   );

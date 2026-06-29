@@ -168,6 +168,12 @@ export interface BracketTie {
   p_home: number;
   p_away: number;
   winner: string;
+  source: 'projected' | 'scraped';
+  status: 'scheduled' | 'final';
+  goals_home: number | null;
+  goals_away: number | null;
+  pens_home: number | null;
+  pens_away: number | null;
 }
 
 export interface BracketProjection {
