@@ -1,43 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
-import { fetchMatches, fetchTeams } from './api/client';
-import GroupTable from './components/GroupTable';
+import { useEffect, useState } from 'react';
+import { fetchTeams } from './api/client';
+import BenchmarkPanel from './components/BenchmarkPanel';
 import KnockoutBracket from './components/KnockoutBracket';
 import LanguageSelector from './components/LanguageSelector';
-import MatchAnalysis from './components/MatchAnalysis';
-import MatchList from './components/MatchList';
-import PlayerAnalysis from './components/PlayerAnalysis';
 import ResultsControl from './components/ResultsControl';
 import { useI18n } from './i18n';
 import HeroScene from './three/HeroScene';
-import type { Fixture, Team } from './types';
-
-const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+import type { Team } from './types';
 
 export default function App() {
   const { t } = useI18n();
   const [teams, setTeams] = useState<Record<string, Team>>({});
-  const [fixtures, setFixtures] = useState<Fixture[]>([]);
-  const [group, setGroup] = useState('A');
-  const [selected, setSelected] = useState<Fixture | null>(null);
-  const [deepFixture, setDeepFixture] = useState<Fixture | null>(null);
-  const [view, setView] = useState<'analysis' | 'results' | 'knockout'>('analysis');
+  const [view, setView] = useState<'knockout' | 'results' | 'benchmark'>('knockout');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchTeams(), fetchMatches()])
-      .then(([teamList, matchList]) => {
-        setTeams(Object.fromEntries(teamList.map((t) => [t.name, t])));
-        setFixtures(matchList);
+    fetchTeams()
+      .then((teamList) => {
+        setTeams(Object.fromEntries(teamList.map((tm) => [tm.name, tm])));
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'unknown');
       });
   }, []);
-
-  const groupFixtures = useMemo(
-    () => fixtures.filter((f) => f.group === group),
-    [fixtures, group],
-  );
 
   return (
     <>
@@ -61,13 +46,6 @@ export default function App() {
         <div className="view-tabs">
           <button
             type="button"
-            className={view === 'analysis' ? 'on' : ''}
-            onClick={() => setView('analysis')}
-          >
-            {t('navAnalysis')}
-          </button>
-          <button
-            type="button"
             className={view === 'knockout' ? 'on' : ''}
             onClick={() => setView('knockout')}
           >
@@ -80,59 +58,25 @@ export default function App() {
           >
             {t('navResults')}
           </button>
+          <button
+            type="button"
+            className={view === 'benchmark' ? 'on' : ''}
+            onClick={() => setView('benchmark')}
+          >
+            {t('navBenchmark')}
+          </button>
         </div>
-
-        {view === 'analysis' && (
-          <>
-            <h2 className="section-title">{t('sectionGroups')}</h2>
-            <div className="group-chips">
-              {GROUPS.map((g) => (
-                <button
-                  type="button"
-                  key={g}
-                  className={`chip ${g === group ? 'active' : ''}`}
-                  onClick={() => setGroup(g)}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
-
-            <h2 className="section-title">{t('sectionMatches', { g: group })}</h2>
-            <MatchList fixtures={groupFixtures} onSelect={setSelected} />
-
-            <h2 className="section-title">{t('sectionOdds')}</h2>
-            <GroupTable group={group} />
-          </>
-        )}
 
         {view === 'knockout' && <KnockoutBracket teams={teams} />}
 
         {view === 'results' && <ResultsControl />}
 
+        {view === 'benchmark' && <BenchmarkPanel />}
+
         <div className="footnote">
           <b>SWC26</b> · {t('footnote')}
         </div>
       </div>
-
-      {selected && teams[selected.home] && teams[selected.away] && (
-        <MatchAnalysis
-          fixture={selected}
-          teams={teams}
-          onClose={() => setSelected(null)}
-          onDeepAnalyze={() => {
-            setDeepFixture(selected);
-            setSelected(null);
-          }}
-        />
-      )}
-
-      {deepFixture && (
-        <PlayerAnalysis
-          fixture={deepFixture}
-          onClose={() => setDeepFixture(null)}
-        />
-      )}
     </>
   );
 }

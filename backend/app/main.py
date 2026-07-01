@@ -17,25 +17,21 @@ from .engine import (
     KnockoutSimulator,
     MatchContext,
     MatchPredictor,
-    MonteCarloSimulator,
     ParameterOverrides,
-    TournamentSimulator,
     analyze_lineups,
     build_lineup,
+    load_bracket,
     optimal_xi,
-    seed_r32,
+    seeded_r32_from_store,
 )
-from .engine.bracket import load_bracket
 from .engine.player_models import FORMATIONS
-from .engine.loader import GROUPS, get_fixtures, load_teams
+from .engine.loader import get_fixtures, load_teams
 from .schemas import (
     AdjustedTeamOut,
+    BenchmarkResponse,
     BracketProjectionResponse,
     FixtureOut,
-    GroupOut,
     FormationSlotOut,
-    GroupSimRequest,
-    GroupSimResponse,
     KnockoutSimRequest,
     KnockoutSimResponse,
     LineupAnalysisRequest,
@@ -51,11 +47,9 @@ from .schemas import (
     ScorelineOut,
     ScrapeResponse,
     TeamOut,
-    TournamentSimRequest,
-    TournamentSimResponse,
 )
-from .services import fbref_index, player_scraper, scraper
-from .services.metrics import get_adjusted_draw, get_adjusted_teams, metrics_report
+from .services import benchmark, fbref_index, player_scraper, scraper
+from .services.metrics import get_adjusted_teams, metrics_report
 from .services.player_store import get_squad, player_store, squad_index, team_slug
 from .services.knockout_store import knockout_store, winner_of
 from .services.results_store import results_store
@@ -93,15 +87,6 @@ def health() -> dict:
 @app.get("/api/teams", response_model=list[TeamOut])
 def list_teams() -> list[dict]:
     return [asdict(t) for t in get_adjusted_teams().values()]
-
-
-@app.get("/api/groups", response_model=list[GroupOut])
-def list_groups() -> list[dict]:
-    draw = get_adjusted_draw()
-    return [
-        {"group": g, "teams": [asdict(t) for t in draw[g]]}
-        for g in GROUPS
-    ]
 
 
 @app.get("/api/matches", response_model=list[FixtureOut])
@@ -150,56 +135,6 @@ def predict(req: PredictRequest) -> dict:
     }
 
 
-def _group_fixed_results(group: str) -> dict:
-    """(home, away) -> (gh, ga) for the group's recorded final results, keyed in
-    BOTH orientations. The simulator looks pairs up in group-draw order, which
-    need not match the fixture's home/away orientation; without the reversed key
-    those matches silently fall through to random sampling and the conditioned
-    standings come out wrong."""
-    stored = results_store.all()
-    fixed = {}
-    for f in get_fixtures():
-        record = stored.get(f["id"])
-        if f["group"] == group and record and record["status"] == "final":
-            gh, ga = record["goals_home"], record["goals_away"]
-            fixed[(f["home"], f["away"])] = (gh, ga)
-            fixed[(f["away"], f["home"])] = (ga, gh)
-    return fixed
-
-
-@app.post("/api/simulate/group", response_model=GroupSimResponse)
-def simulate_group(req: GroupSimRequest) -> dict:
-    draw = get_adjusted_draw()
-    fixed = _group_fixed_results(req.group) if req.use_results else {}
-    sim = MonteCarloSimulator(_model, seed=2026)
-    table = sim.simulate_group(
-        draw[req.group], n_sims=req.n_sims, fixed_results=fixed or None
-    )
-    return {
-        "group": req.group,
-        "n_sims": req.n_sims,
-        # fixed holds both orientations per match; count distinct pairings.
-        "played": len({frozenset(k) for k in fixed}),
-        "table": table,
-    }
-
-
-@app.post("/api/simulate/tournament", response_model=TournamentSimResponse)
-def simulate_tournament(req: TournamentSimRequest) -> dict:
-    sim = TournamentSimulator(_model, get_adjusted_draw(), seed=2026)
-    return {"n_sims": req.n_sims, "table": sim.simulate(n_sims=req.n_sims)}
-
-
-def _all_groups_fixed_results() -> dict:
-    """group -> {(home, away): (gh, ga)} for every group with recorded finals."""
-    out = {}
-    for g in GROUPS:
-        fixed = _group_fixed_results(g)
-        if fixed:
-            out[g] = fixed
-    return out
-
-
 def _fixed_knockout() -> dict[int, str]:
     """Recorded knockout winners by match number (goals, penalties tie-break)."""
     out: dict[int, str] = {}
@@ -212,54 +147,49 @@ def _fixed_knockout() -> dict[int, str]:
 
 @app.post("/api/simulate/knockout", response_model=KnockoutSimResponse)
 def simulate_knockout(req: KnockoutSimRequest) -> dict:
-    """Title-odds Monte Carlo: plays the full bracket each run and reports every
-    team's probability of reaching R16/QF/SF/the final and winning the cup.
-    Already-decided knockout ties are locked to their recorded winners."""
-    fixed = _all_groups_fixed_results() if req.use_results else None
+    """Title-odds Monte Carlo over the scraped bracket: seeds the R32 straight
+    from scraped real results and plays the bracket each run, reporting every
+    team's probability of reaching R16/QF/SF/the final and winning the cup. R32
+    ties not yet drawn are pending and contribute no odds; already-decided ties
+    are locked to their recorded winners."""
+    persisted = knockout_store.all() if req.use_results else {}
+    seeded = seeded_r32_from_store(persisted)
     fixed_ko = _fixed_knockout() if req.use_results else None
-    sim = KnockoutSimulator(_model, get_adjusted_draw(), seed=2026)
+    sim = KnockoutSimulator(_model, get_adjusted_teams(), seed=2026)
     return {
         "n_sims": req.n_sims,
-        "table": sim.simulate(n_sims=req.n_sims, fixed_results=fixed, fixed_ko=fixed_ko),
+        "table": sim.simulate(seeded, n_sims=req.n_sims, fixed_ko=fixed_ko),
     }
 
 
 @app.get("/api/bracket/projection", response_model=BracketProjectionResponse)
 def bracket_projection(use_results: bool = True) -> dict:
-    """The single most-likely bracket: project each group's standings, seed the
-    official R32 slots, then resolve every tie by the higher predicted win
-    probability. Each tie is fully predictable on demand via /api/predict."""
-    draw = get_adjusted_draw()
+    """The single most-likely bracket. The Round of 32 is seeded straight from
+    scraped real results (the knockout store); an R32 tie not yet scraped is
+    *pending* and leaves everything downstream of it unresolved. Known ties are
+    resolved by the higher predicted win probability unless a scraped final locks
+    the winner. Each tie is fully predictable on demand via /api/predict."""
     teams = get_adjusted_teams()
-    sim = MonteCarloSimulator(_model, seed=2026)
-    fixed_all = _all_groups_fixed_results() if use_results else {}
-
-    group_order: dict[str, list[str]] = {}
-    thirds: list[tuple] = []  # (avg_points, group, third_name)
-    for g in GROUPS:
-        rows = sim.simulate_group(
-            draw[g], n_sims=3000, fixed_results=fixed_all.get(g) or None
-        )
-        ordered = sorted(
-            rows, key=lambda r: (r["avg_points"], r["win_group_pct"]), reverse=True
-        )
-        group_order[g] = [r["team"] for r in ordered]
-        thirds.append((ordered[2]["avg_points"], g, ordered[2]["team"]))
-    thirds.sort(reverse=True)
-    qualified = [g for _, g, _ in thirds[:8]]
-
-    seeded = seed_r32(group_order, qualified)
     persisted = knockout_store.all() if use_results else {}
+    seeded = seeded_r32_from_store(persisted)
+
     winners: dict[int, str] = {}
     losers: dict[int, str] = {}
     ties: list[dict] = []
 
-    def resolve(match: int, rnd: str, home: str, away: str) -> None:
-        # A scraped matchup (real teams) takes precedence over the projection;
-        # a scraped final additionally locks the winner and carries the score.
+    def resolve(match: int, rnd: str, home, away) -> None:
+        # A scraped record always carries the real matchup for its slot, even
+        # when the upstream projection is still pending.
         rec = persisted.get(str(match))
-        if rec:
+        if rec and rec.get("home") and rec.get("away"):
             home, away = rec["home"], rec["away"]
+        if home is None or away is None:
+            ties.append({
+                "match": match, "round": rnd, "home": home, "away": away,
+                "p_home": None, "p_away": None, "winner": None,
+                "source": "scraped" if rec else "projected", "status": "pending",
+            })
+            return
         pred = _predictor.predict(teams[home], teams[away])
         tie: dict = {
             "match": match, "round": rnd, "home": home, "away": away,
@@ -284,8 +214,8 @@ def bracket_projection(use_results: bool = True) -> dict:
         home, away = seeded[match]
         resolve(match, "R32", home, away)
 
-    def ref(token: str) -> str:
-        return (winners if token[0] == "W" else losers)[int(token[1:])]
+    def ref(token: str):
+        return (winners if token[0] == "W" else losers).get(int(token[1:]))
 
     for tie in load_bracket()["tree"]:
         resolve(tie["match"], tie["round"], ref(tie["home"]), ref(tie["away"]))
@@ -353,6 +283,14 @@ def scrape_refresh() -> dict:
 @app.get("/api/metrics/adjusted", response_model=list[AdjustedTeamOut])
 def adjusted_metrics() -> list[dict]:
     return metrics_report()
+
+
+@app.get("/api/metrics/benchmark", response_model=BenchmarkResponse)
+def benchmark_metrics() -> dict:
+    """Predicted-vs-real performance: correct-winner rate, Brier, log-loss and
+    exact-score hit rate for every finished match (group + knockout), with
+    per-round and per-team breakdowns."""
+    return benchmark.build_benchmark()
 
 
 # --------------------------------------------------------------------------- #

@@ -132,14 +132,16 @@ const dictionaries = {
     redCards: 'Red cards',
     crunchingPlayers: 'Computing matchup…',
     navKnockout: 'Knockout',
-    bracketTitle: 'Projected bracket — most likely path to the title',
+    bracketTitle: 'Knockout bracket — Round of 32 to the title',
     bracketDesc:
-      'Group standings projected from current results, seeded into the official ' +
-      'FIFA 2026 bracket. Click any tie for a full prediction.',
+      'The Round of 32 is seeded from scraped real results; ties not yet drawn ' +
+      'show as TBD until the scraper has them. Click any tie for a full prediction.',
     deepRunTitle: 'Deep-run odds — title probabilities ({n} Monte Carlo runs)',
     knockoutFailed: 'Knockout simulation failed',
     bracketFinal: 'Result',
     bracketDrawn: 'Drawn',
+    bracketPending: 'TBD',
+    awaitingDraw: 'Awaiting the scraped Round-of-32 draw.',
     roundOf32: 'Round of 32',
     roundOf16: 'Round of 16',
     quarterfinal: 'Quarterfinals',
@@ -151,6 +153,22 @@ const dictionaries = {
     reachSf: 'Semis',
     reachQf: 'Quarters',
     reachR16: 'R16',
+    navBenchmark: 'Benchmark',
+    benchmarkTitle: 'Model performance — predicted vs real',
+    benchmarkDesc:
+      'Every finished match scored against the model’s a-priori prediction. ' +
+      'Group matches are scored three-way, knockout ties two-way (penalties decide).',
+    benchLoadFailed: 'Could not load the benchmark',
+    benchNoData: 'No finished matches recorded yet — nothing to score.',
+    correctWinner: 'Correct winner',
+    brier: 'Brier',
+    logLoss: 'Log-loss',
+    exactScore: 'Exact score',
+    byRound: 'By round',
+    byTeam: 'By team',
+    benchOverall: 'Overall',
+    benchMatches: 'Matches',
+    stage: 'Stage',
   },
   es: {
     kicker: 'Copa Mundial FIFA 2026 · Motor Predictivo',
@@ -268,14 +286,17 @@ const dictionaries = {
     redCards: 'Tarjetas rojas',
     crunchingPlayers: 'Calculando enfrentamiento…',
     navKnockout: 'Eliminatorias',
-    bracketTitle: 'Cuadro proyectado — el camino más probable al título',
+    bracketTitle: 'Cuadro de eliminatorias — de dieciseisavos al título',
     bracketDesc:
-      'Posiciones de grupo proyectadas desde los resultados actuales, sembradas en ' +
-      'el cuadro oficial FIFA 2026. Haz clic en cualquier cruce para la predicción.',
+      'Los dieciseisavos se arman desde los resultados reales scrapeados; los ' +
+      'cruces aún no sorteados aparecen como TBD hasta que el scraper los tenga. ' +
+      'Haz clic en cualquier cruce para la predicción.',
     deepRunTitle: 'Probabilidades de avance — opciones al título ({n} corridas Monte Carlo)',
     knockoutFailed: 'La simulación de eliminatorias falló',
     bracketFinal: 'Resultado',
     bracketDrawn: 'Sorteado',
+    bracketPending: 'TBD',
+    awaitingDraw: 'A la espera del sorteo scrapeado de dieciseisavos.',
     roundOf32: 'Dieciseisavos',
     roundOf16: 'Octavos',
     quarterfinal: 'Cuartos',
@@ -287,6 +308,23 @@ const dictionaries = {
     reachSf: 'Semis',
     reachQf: 'Cuartos',
     reachR16: 'Octavos',
+    navBenchmark: 'Rendimiento',
+    benchmarkTitle: 'Rendimiento del modelo — predicho vs real',
+    benchmarkDesc:
+      'Cada partido terminado se puntúa contra la predicción a-priori del modelo. ' +
+      'Los partidos de grupo se puntúan a tres vías, las eliminatorias a dos ' +
+      '(deciden los penales).',
+    benchLoadFailed: 'No se pudo cargar el rendimiento',
+    benchNoData: 'Aún no hay partidos terminados registrados — nada que puntuar.',
+    correctWinner: 'Ganador correcto',
+    brier: 'Brier',
+    logLoss: 'Log-loss',
+    exactScore: 'Marcador exacto',
+    byRound: 'Por ronda',
+    byTeam: 'Por selección',
+    benchOverall: 'Global',
+    benchMatches: 'Partidos',
+    stage: 'Fase',
   },
   pt: {
     kicker: 'Copa do Mundo FIFA 2026 · Motor Preditivo',
@@ -404,14 +442,17 @@ const dictionaries = {
     redCards: 'Cartões vermelhos',
     crunchingPlayers: 'Calculando confronto…',
     navKnockout: 'Mata-mata',
-    bracketTitle: 'Chave projetada — o caminho mais provável ao título',
+    bracketTitle: 'Chave do mata-mata — das dezesseis-avos ao título',
     bracketDesc:
-      'Classificações de grupo projetadas a partir dos resultados atuais, semeadas ' +
-      'na chave oficial FIFA 2026. Clique em qualquer confronto para a previsão.',
+      'As trigésima-segundos são montadas a partir dos resultados reais raspados; ' +
+      'confrontos ainda não sorteados aparecem como TBD até o raspador tê-los. ' +
+      'Clique em qualquer confronto para a previsão.',
     deepRunTitle: 'Probabilidades de avanço — chances ao título ({n} execuções Monte Carlo)',
     knockoutFailed: 'A simulação do mata-mata falhou',
     bracketFinal: 'Resultado',
     bracketDrawn: 'Sorteado',
+    bracketPending: 'TBD',
+    awaitingDraw: 'Aguardando o sorteio raspado das trigésima-segundos.',
     roundOf32: 'Trigésima-segundos',
     roundOf16: 'Oitavas',
     quarterfinal: 'Quartas',
@@ -423,6 +464,23 @@ const dictionaries = {
     reachSf: 'Semis',
     reachQf: 'Quartas',
     reachR16: 'Oitavas',
+    navBenchmark: 'Desempenho',
+    benchmarkTitle: 'Desempenho do modelo — previsto vs real',
+    benchmarkDesc:
+      'Cada partida encerrada é pontuada contra a previsão a-priori do modelo. ' +
+      'Partidas de grupo são pontuadas em três vias, o mata-mata em duas ' +
+      '(pênaltis decidem).',
+    benchLoadFailed: 'Não foi possível carregar o desempenho',
+    benchNoData: 'Nenhuma partida encerrada registrada ainda — nada a pontuar.',
+    correctWinner: 'Vencedor correto',
+    brier: 'Brier',
+    logLoss: 'Log-loss',
+    exactScore: 'Placar exato',
+    byRound: 'Por fase',
+    byTeam: 'Por seleção',
+    benchOverall: 'Geral',
+    benchMatches: 'Partidas',
+    stage: 'Fase',
   },
 } as const;
 

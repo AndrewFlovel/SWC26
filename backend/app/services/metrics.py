@@ -13,7 +13,7 @@ from typing import Dict, List
 
 from ..engine.adjuster import AdjustmentConfig, apply_results
 from ..engine.core import TeamProfile
-from ..engine.loader import GROUPS, get_fixtures, load_teams
+from ..engine.loader import get_fixtures, load_teams
 from .results_store import results_store
 
 ADJ_CFG = AdjustmentConfig()
@@ -26,13 +26,6 @@ def _adjusted(version: int) -> Dict[str, TeamProfile]:
 
 def get_adjusted_teams() -> Dict[str, TeamProfile]:
     return _adjusted(results_store.version)
-
-
-def get_adjusted_draw() -> Dict[str, List[TeamProfile]]:
-    draw: Dict[str, List[TeamProfile]] = {g: [] for g in GROUPS}
-    for profile in get_adjusted_teams().values():
-        draw[profile.group].append(profile)
-    return draw
 
 
 def _matches_played() -> Dict[str, int]:

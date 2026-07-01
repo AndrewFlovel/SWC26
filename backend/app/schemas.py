@@ -43,11 +43,6 @@ class FixtureOut(BaseModel):
     venue: VenueOut
 
 
-class GroupOut(BaseModel):
-    group: str
-    teams: List[TeamOut]
-
-
 class PredictRequest(BaseModel):
     home: str
     away: str
@@ -81,31 +76,6 @@ class PredictResponse(BaseModel):
     top_scorelines: List[ScorelineOut]
     matrix: List[List[float]]
     matrix_size: int
-
-
-class GroupSimRequest(BaseModel):
-    group: str = Field(pattern="^[A-L]$")
-    n_sims: int = Field(default=5000, ge=100, le=20000)
-    use_results: bool = Field(
-        default=True,
-        description="Condition the simulation on recorded final results.",
-    )
-
-
-class GroupSimRow(BaseModel):
-    team: str
-    win_group_pct: float
-    second_pct: float
-    top2_pct: float
-    third_pct: float
-    avg_points: float
-
-
-class GroupSimResponse(BaseModel):
-    group: str
-    n_sims: int
-    played: int = 0
-    table: List[GroupSimRow]
 
 
 class ResultIn(BaseModel):
@@ -161,30 +131,11 @@ class AdjustedTeamOut(BaseModel):
     matches_played: int
 
 
-class TournamentSimRequest(BaseModel):
-    n_sims: int = Field(default=2000, ge=100, le=10000)
-
-
-class TournamentSimRow(BaseModel):
-    group: str
-    team: str
-    elo: int
-    win_group_pct: float
-    top2_pct: float
-    best_third_pct: float
-    qualify_r32_pct: float
-
-
-class TournamentSimResponse(BaseModel):
-    n_sims: int
-    table: List[TournamentSimRow]
-
-
 class KnockoutSimRequest(BaseModel):
     n_sims: int = Field(default=4000, ge=100, le=10000)
     use_results: bool = Field(
         default=True,
-        description="Condition the group stage on recorded final results.",
+        description="Seed the R32 from scraped results and lock decided ties.",
     )
 
 
@@ -207,13 +158,15 @@ class KnockoutSimResponse(BaseModel):
 class BracketTie(BaseModel):
     match: int
     round: str            # "R32" | "R16" | "QF" | "SF" | "3P" | "F"
-    home: str
-    away: str
-    p_home: float
-    p_away: float
-    winner: str
+    # home/away/winner are null while a tie is pending (R32 slot not yet scraped,
+    # or an upstream tie unresolved).
+    home: Optional[str] = None
+    away: Optional[str] = None
+    p_home: Optional[float] = None
+    p_away: Optional[float] = None
+    winner: Optional[str] = None
     source: str = "projected"        # "projected" | "scraped"
-    status: str = "scheduled"        # "scheduled" | "final"
+    status: str = "scheduled"        # "scheduled" | "final" | "pending"
     goals_home: Optional[int] = None
     goals_away: Optional[int] = None
     pens_home: Optional[int] = None
@@ -223,6 +176,46 @@ class BracketTie(BaseModel):
 class BracketProjectionResponse(BaseModel):
     use_results: bool
     ties: List[BracketTie]
+
+
+# --------------------------------------------------------------------------- #
+# Predicted-vs-real performance benchmark
+# --------------------------------------------------------------------------- #
+
+class BenchmarkMatchOut(BaseModel):
+    key: str                 # fixture id ("A1") or knockout match number ("89")
+    stage: str               # "Group" | "R32" | "R16" | "QF" | "SF" | "3P" | "F"
+    home: str
+    away: str
+    goals_home: int
+    goals_away: int
+    actual: str              # "home" | "draw" | "away"
+    p_home: float
+    p_draw: float
+    p_away: float
+    predicted: str           # model's most likely outcome
+    correct_winner: bool
+    brier: float
+    log_loss: float
+    predicted_score: str     # model's single most likely scoreline, "i-j"
+    exact_hit: bool
+    p_actual_score: float    # model probability of the real scoreline
+
+
+class BenchmarkAggregateOut(BaseModel):
+    label: str               # global "overall", a stage, or a team name
+    matches: int
+    correct_winner_pct: float
+    brier: float
+    log_loss: float
+    exact_score_pct: float
+
+
+class BenchmarkResponse(BaseModel):
+    summary: BenchmarkAggregateOut
+    by_round: List[BenchmarkAggregateOut]
+    by_team: List[BenchmarkAggregateOut]
+    matches: List[BenchmarkMatchOut]
 
 
 # --------------------------------------------------------------------------- #

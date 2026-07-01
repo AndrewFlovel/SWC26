@@ -1453,6 +1453,53 @@ table.battle-table td {
   font-weight: 700;
 }
 
+/* Pending tie: R32 slot (or an upstream tie) not yet scraped. */
+.bracket-tie-pending {
+  cursor: default;
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.bracket-tie-pending:hover {
+  border-color: var(--border);
+  transform: none;
+}
+
+.bracket-tie-pending .bt-team {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Benchmark summary cards. */
+.bench-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.bench-card {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.bench-card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.1;
+}
+
+.bench-card-label {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
 .bt-side {
   display: flex;
   align-items: center;

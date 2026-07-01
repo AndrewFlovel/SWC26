@@ -270,34 +270,6 @@ def test_prediction_uses_adjusted_elo():
     assert boosted["p_home"] > base["p_home"]
 
 
-def test_group_sim_conditioned_on_results():
-    fixture = next(f for f in get_fixtures() if f["group"] == "A")
-    weak_side = fixture["away"]
-    for f in get_fixtures():
-        if f["group"] != "A" or f["matchday"] > 2:
-            continue
-        if f["home"] == weak_side:
-            client.put(f"/api/results/{f['id']}",
-                       json={"goals_home": 2, "goals_away": 0, "status": "final"})
-        elif f["away"] == weak_side:
-            client.put(f"/api/results/{f['id']}",
-                       json={"goals_home": 0, "goals_away": 2, "status": "final"})
-
-    conditioned = client.post(
-        "/api/simulate/group",
-        json={"group": "A", "n_sims": 1500, "use_results": True},
-    ).json()
-    unconditioned = client.post(
-        "/api/simulate/group",
-        json={"group": "A", "n_sims": 1500, "use_results": False},
-    ).json()
-    assert conditioned["played"] == 2
-    assert unconditioned["played"] == 0
-    top2 = {r["team"]: r["top2_pct"] for r in conditioned["table"]}
-    top2_base = {r["team"]: r["top2_pct"] for r in unconditioned["table"]}
-    assert top2[weak_side] > top2_base[weak_side]
-
-
 # ---------------------------------------------------------------- scraper
 
 def test_scrape_endpoint_degrades_gracefully(monkeypatch):

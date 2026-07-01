@@ -1,13 +1,13 @@
-"""Tests for the knockout stage: bracket template integrity, best-thirds
-allocation, R32 seeding, the decisive tie resolver, the title-odds Monte Carlo
-and the projected-bracket endpoint."""
+"""Tests for the knockout stage: bracket template integrity, store-seeded R32,
+the decisive tie resolver, the title-odds Monte Carlo and the projected-bracket
+endpoint (now driven entirely by scraped results, no group simulation)."""
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.engine import EloPoissonModel, KnockoutSimulator, MonteCarloSimulator, seed_r32
-from app.engine.bracket import allocate_thirds, load_bracket, third_receiving_groups
-from app.engine.loader import get_draw, load_teams
+from app.engine import EloPoissonModel, KnockoutSimulator, seeded_r32_from_store
+from app.engine.bracket import load_bracket, r32_match_numbers
+from app.engine.loader import load_teams
 from app.main import app
 from app.services.knockout_store import knockout_store, winner_of
 
@@ -19,7 +19,7 @@ _MODEL = EloPoissonModel()
 @pytest.fixture(autouse=True)
 def isolated_knockout_store(tmp_path):
     """Point the singleton knockout store at a temp file and reset afterwards,
-    so every test starts with an empty (fully projected) bracket."""
+    so every test starts with an empty (fully pending) bracket."""
     ks = knockout_store
     original_path, original_records = ks.path, ks._records
     ks.path = tmp_path / "knockout_results.json"
@@ -29,9 +29,21 @@ def isolated_knockout_store(tmp_path):
     ks._records = original_records
 
 
-def _group_order():
-    """group -> 4 team names in seed order (a deterministic stand-in standings)."""
-    return {g: [t.name for t in teams] for g, teams in get_draw().items()}
+def _distinct_r32():
+    """A full R32 seeding of 32 distinct real teams: match -> (home, away)."""
+    names = list(load_teams())[:32]
+    return {
+        match: (names[2 * i], names[2 * i + 1])
+        for i, match in enumerate(r32_match_numbers())
+    }
+
+
+def _seed_store_full():
+    """Persist a full, scheduled R32 draw of 32 distinct teams into the store."""
+    seeded = _distinct_r32()
+    for match, (home, away) in seeded.items():
+        knockout_store.upsert(match, home, away, status="scheduled", source="scraped")
+    return seeded
 
 
 # ---------------------------------------------------------------- template
@@ -41,130 +53,152 @@ def test_bracket_template_integrity():
     assert len(b["r32"]) == 16
     assert {t["match"] for t in b["r32"]} == set(range(73, 89))
     assert {t["match"] for t in b["tree"]} == set(range(89, 105))
-    third_slots = [t for t in b["r32"] if t["away"] == "3X"]
-    assert len(third_slots) == 8
-    # final is match 104, third-place play-off is 103
     rounds = {t["match"]: t["round"] for t in b["tree"]}
     assert rounds[104] == "F" and rounds[103] == "3P"
+    assert r32_match_numbers() == tuple(range(73, 89))
 
 
-def test_third_receiving_groups():
-    assert third_receiving_groups() == ("E", "I", "A", "L", "D", "G", "B", "K")
+# ---------------------------------------------------------------- store seeding
 
-
-# ---------------------------------------------------------------- allocation
-
-def test_allocate_thirds_avoids_own_group_and_is_bijection():
-    opp = third_receiving_groups()
-    qualified = ["A", "B", "C", "D", "E", "F", "G", "H"]  # overlaps A,B,D,E,G
-    alloc = allocate_thirds(qualified, opp)
-    assert set(alloc.keys()) == set(opp)
-    assert sorted(alloc.values()) == sorted(qualified)  # bijection
-    for winner_group, third_group in alloc.items():
-        assert winner_group != third_group  # no own-group clash
-
-
-def test_allocate_thirds_wrong_count_raises():
-    with pytest.raises(ValueError):
-        allocate_thirds(["A", "B"], third_receiving_groups())
-
-
-# ---------------------------------------------------------------- seeding
-
-def test_seed_r32_fills_32_distinct_real_teams():
-    order = _group_order()
-    qualified = ["C", "F", "H", "J", "E", "I", "A", "L"]
-    seeded = seed_r32(order, qualified)
+def test_seeded_r32_empty_store_is_all_pending():
+    seeded = seeded_r32_from_store({})
     assert set(seeded.keys()) == set(range(73, 89))
-    names = [n for tie in seeded.values() for n in tie]
-    assert len(names) == 32
-    assert len(set(names)) == 32  # all distinct
-    valid = set(load_teams())
-    assert set(names) <= valid
-    # no third-placed team faces the winner of its own group
-    for grp in qualified:
-        winner = order[grp][0]
-        third = order[grp][2]
-        for home, away in seeded.values():
-            if third in (home, away):
-                assert winner not in (home, away)
+    assert all(pair == (None, None) for pair in seeded.values())
+
+
+def test_seeded_r32_reads_scraped_matchups():
+    _seed_store_full()
+    seeded = seeded_r32_from_store(knockout_store.all())
+    names = [n for pair in seeded.values() for n in pair]
+    assert len(names) == 32 and len(set(names)) == 32
+    assert set(names) <= set(load_teams())
+
+
+def test_seeded_r32_partial_leaves_rest_pending():
+    knockout_store.upsert(73, "Spain", "France", status="scheduled", source="scraped")
+    seeded = seeded_r32_from_store(knockout_store.all())
+    assert seeded[73] == ("Spain", "France")
+    assert seeded[74] == (None, None)
 
 
 # ---------------------------------------------------------------- resolver
 
 def test_resolve_knockout_is_always_decisive():
-    mc = MonteCarloSimulator(_MODEL, seed=7)
-    teams = load_teams()
-    a, b = teams["Spain"], teams["Haiti"]
+    sim = KnockoutSimulator(_MODEL, load_teams(), seed=7)
     for _ in range(200):
-        winner, loser = mc._resolve_knockout(a, b)
-        assert {winner, loser} == {a.name, b.name}
+        winner, loser = sim._resolve_knockout("Spain", "Haiti")
+        assert {winner, loser} == {"Spain", "Haiti"}
         assert winner != loser
 
 
 def test_resolve_knockout_favours_the_stronger_side():
-    mc = MonteCarloSimulator(_MODEL, seed=11)
     teams = load_teams()
-    strong = max(teams.values(), key=lambda t: t.elo)
-    weak = min(teams.values(), key=lambda t: t.elo)
-    wins = sum(
-        mc._resolve_knockout(strong, weak)[0] == strong.name for _ in range(400)
-    )
+    sim = KnockoutSimulator(_MODEL, teams, seed=11)
+    strong = max(teams.values(), key=lambda t: t.elo).name
+    weak = min(teams.values(), key=lambda t: t.elo).name
+    wins = sum(sim._resolve_knockout(strong, weak)[0] == strong for _ in range(400))
     assert wins > 280  # heavy favourite clears 70%
 
 
 # ---------------------------------------------------------------- title MC
 
 def test_knockout_sim_probabilities_are_coherent():
-    sim = KnockoutSimulator(_MODEL, get_draw(), seed=2026)
-    table = sim.simulate(n_sims=600)
-    assert len(table) == 48
-    # exactly one champion, two finalists, four semifinalists per run
+    seeded = _distinct_r32()
+    sim = KnockoutSimulator(_MODEL, load_teams(), seed=2026)
+    table = sim.simulate(seeded, n_sims=600)
+    assert len(table) == 32  # only the seeded teams accrue odds
     assert abs(sum(r["champion"] for r in table) - 100) < 5
     assert abs(sum(r["reach_final"] for r in table) - 200) < 6
-    assert abs(sum(r["reach_r16"] for r in table) - 1600) < 12
-    # monotyped: reaching an earlier round is at least as likely as a later one
+    assert abs(sum(r["reach_r16"] for r in table) - 1600) < 1e-6
     for r in table:
-        assert r["reach_r16"] >= r["reach_qf"] >= r["reach_sf"] >= r["champion"]
-        assert r["champion"] >= 0
+        assert r["reach_r16"] >= r["reach_qf"] >= r["reach_sf"] >= r["reach_final"]
+        assert r["reach_final"] >= r["champion"] >= 0
+
+
+def test_knockout_sim_empty_seed_returns_no_rows():
+    sim = KnockoutSimulator(_MODEL, load_teams(), seed=1)
+    assert sim.simulate(seeded_r32_from_store({}), n_sims=100) == []
 
 
 def test_knockout_sim_is_deterministic_and_ranks_favourites():
-    a = KnockoutSimulator(_MODEL, get_draw(), seed=2026).simulate(n_sims=400)
-    b = KnockoutSimulator(_MODEL, get_draw(), seed=2026).simulate(n_sims=400)
+    seeded = _distinct_r32()
+    a = KnockoutSimulator(_MODEL, load_teams(), seed=2026).simulate(seeded, n_sims=400)
+    b = KnockoutSimulator(_MODEL, load_teams(), seed=2026).simulate(seeded, n_sims=400)
     assert a == b  # same seed -> identical
     champ = {r["team"]: r["champion"] for r in a}
     teams = load_teams()
-    strong = max(teams.values(), key=lambda t: t.elo).name
-    weak = min(teams.values(), key=lambda t: t.elo).name
+    seeded_names = [n for pair in seeded.values() for n in pair]
+    strong = max(seeded_names, key=lambda n: teams[n].elo)
+    weak = min(seeded_names, key=lambda n: teams[n].elo)
     assert champ[strong] > champ[weak]
+
+
+def test_play_bracket_respects_fixed_ko():
+    """A fixed knockout result overrides the simulated tie, win or lose."""
+    seeded = _distinct_r32()
+    sim = KnockoutSimulator(_MODEL, load_teams(), seed=3)
+    home73, away73 = seeded[73]
+    winners, losers = sim._play_bracket(seeded, {73: away73})
+    assert winners[73] == away73 and losers[73] == home73
+    # the forced winner is carried into the R16 tie fed by W73 (match 90)
+    assert away73 in (winners[90], losers[90])
+
+
+def test_play_bracket_pending_slot_stops_progression():
+    """A pending R32 tie leaves its slot — and everything downstream — unresolved."""
+    seeded = _distinct_r32()
+    seeded[73] = (None, None)  # match 90 is fed by W73
+    sim = KnockoutSimulator(_MODEL, load_teams(), seed=5)
+    winners, _ = sim._play_bracket(seeded)
+    assert 73 not in winners
+    assert 90 not in winners  # depends on W73
 
 
 # ---------------------------------------------------------------- endpoints
 
-def test_simulate_knockout_endpoint():
+def test_simulate_knockout_endpoint_empty_store():
     resp = client.post("/api/simulate/knockout", json={"n_sims": 300})
     assert resp.status_code == 200
     body = resp.json()
     assert body["n_sims"] == 300
-    assert len(body["table"]) == 48
-    champs = [r["champion"] for r in body["table"]]
+    assert body["table"] == []  # nothing drawn yet
+
+
+def test_simulate_knockout_endpoint_seeded():
+    _seed_store_full()
+    resp = client.post("/api/simulate/knockout", json={"n_sims": 300})
+    assert resp.status_code == 200
+    table = resp.json()["table"]
+    assert len(table) == 32
+    champs = [r["champion"] for r in table]
     assert champs == sorted(champs, reverse=True)  # sorted by title odds
 
 
-def test_bracket_projection_endpoint():
+def test_bracket_projection_empty_store_is_all_pending():
     resp = client.get("/api/bracket/projection")
     assert resp.status_code == 200
     ties = resp.json()["ties"]
     assert len(ties) == 32  # 16 + 8 + 4 + 2 + 1 + 1
     assert [t["match"] for t in ties] == list(range(73, 105))
-    valid = set(load_teams())
     for t in ties:
+        assert t["status"] == "pending"
+        assert t["home"] is None and t["away"] is None and t["winner"] is None
+
+
+def test_bracket_projection_resolves_seeded_r32():
+    _seed_store_full()
+    ties = {t["match"]: t for t in client.get("/api/bracket/projection").json()["ties"]}
+    valid = set(load_teams())
+    # R32 ties carry the scraped matchup; the final is now projectable.
+    for match in range(73, 89):
+        t = ties[match]
+        assert t["source"] == "scraped" and t["status"] == "scheduled"
         assert t["home"] in valid and t["away"] in valid
         assert t["winner"] in (t["home"], t["away"])
-        assert t["source"] == "projected"  # empty store -> all projected
-    # deterministic projection
-    again = client.get("/api/bracket/projection").json()["ties"]
+    final = ties[104]
+    assert final["status"] == "scheduled" and final["winner"] in valid
+    # deterministic
+    again = {t["match"]: t for t in client.get("/api/bracket/projection").json()["ties"]}
     assert again == ties
 
 
@@ -176,7 +210,6 @@ def test_knockout_store_winner_uses_penalties():
     )
     assert winner_of(rec) == "Spain"
     assert winner_of(knockout_store.get(73)) == "Spain"
-    # a draw with no shootout recorded is undecidable
     assert winner_of({"status": "final", "home": "A", "away": "B",
                       "goals_home": 0, "goals_away": 0,
                       "pens_home": None, "pens_away": None}) is None
@@ -185,62 +218,6 @@ def test_knockout_store_winner_uses_penalties():
 def test_knockout_store_rejects_out_of_range_match():
     with pytest.raises(ValueError):
         knockout_store.upsert(50, "Spain", "France")
-
-
-def test_play_bracket_respects_fixed_ko():
-    """A fixed knockout result overrides the simulated tie, win or lose."""
-    sim = KnockoutSimulator(_MODEL, get_draw(), seed=3)
-    order = _group_order()
-    seeded = seed_r32(order, ["C", "F", "H", "J", "E", "I", "A", "L"])
-    home73, away73 = seeded[73]
-    winners, losers = sim._play_bracket(seeded, {73: away73})
-    assert winners[73] == away73 and losers[73] == home73
-    # the forced winner is carried into the R16 tie fed by W73 (match 90)
-    assert away73 in (winners[90], losers[90])
-
-
-def _full_fixed_results():
-    """All recorded group results keyed in BOTH orientations, so every group is
-    fully conditioned and the seeding becomes deterministic (the production
-    endpoint keys a single orientation, which leaves the seeding stochastic)."""
-    from app.engine.loader import get_fixtures
-    from app.services.results_store import results_store
-
-    by_group: dict = {}
-    for f in get_fixtures():
-        rec = results_store.get(f["id"])
-        if not rec or rec["status"] != "final":
-            continue
-        gh, ga = rec["goals_home"], rec["goals_away"]
-        d = by_group.setdefault(f["group"], {})
-        d[(f["home"], f["away"])] = (gh, ga)
-        d[(f["away"], f["home"])] = (ga, gh)
-    return by_group
-
-
-def _deterministic_slot(match: int, fixed: dict):
-    """The two teams occupying a knockout slot, via the simulator's own ordering."""
-    sim = KnockoutSimulator(_MODEL, get_draw(), seed=2026)
-    order, thirds = {}, []
-    for g, teams in sim.draw.items():
-        ranked = sim.mc.simulate_group_once(teams, fixed.get(g) or None)
-        order[g] = [r.name for r in ranked]
-        thirds.append(ranked[2])
-    thirds.sort(key=lambda r: (r.pts, r.gd, r.gf, r.elo), reverse=True)
-    qualified = [sim._by_name[r.name].group for r in thirds[:8]]
-    return seed_r32(order, qualified)[match]
-
-
-def test_simulate_conditions_on_fixed_knockout_result():
-    """A recorded R32 final eliminates the loser and guarantees the winner."""
-    fixed = _full_fixed_results()
-    home73, away73 = _deterministic_slot(73, fixed)
-    sim = KnockoutSimulator(_MODEL, get_draw(), seed=2026)
-    table = sim.simulate(n_sims=200, fixed_results=fixed, fixed_ko={73: home73})
-    row = {r["team"]: r for r in table}
-    assert row[away73]["reach_qf"] == 0.0       # loser out in R32
-    assert row[away73]["reach_r16"] == 0.0
-    assert row[home73]["reach_r16"] == 100.0    # winner always through
 
 
 def test_fixed_knockout_helper_uses_penalty_winner():
@@ -262,5 +239,5 @@ def test_bracket_projection_overlays_scraped_final():
     assert (t73["home"], t73["away"]) == ("Spain", "France")
     assert (t73["goals_home"], t73["goals_away"]) == (2, 1)
     assert t73["winner"] == "Spain"
-    # a still-undrawn later round stays projected
-    assert next(t for t in ties if t["match"] == 104)["source"] == "projected"
+    # with the rest of the R32 undrawn, downstream ties stay pending
+    assert next(t for t in ties if t["match"] == 104)["status"] == "pending"

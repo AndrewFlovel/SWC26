@@ -23,14 +23,19 @@ const ROUND_LABEL: Record<BracketRound, TranslationKey> = {
 };
 
 /** Synthesize a neutral-venue fixture so a tie can reuse the prediction modal. */
-function neutralFixture(tie: BracketTie, roundName: string): Fixture {
+function neutralFixture(
+  match: number,
+  home: string,
+  away: string,
+  roundName: string,
+): Fixture {
   return {
-    id: `m${tie.match}`,
+    id: `m${match}`,
     group: roundName,
     matchday: 0,
     date: '',
-    home: tie.home,
-    away: tie.away,
+    home,
+    away,
     home_team_host: null,
     venue: {
       id: 'neutral',
@@ -53,14 +58,31 @@ function sideScore(goals: number | null, pens: number | null, pct: number): stri
 
 function TieCard({ tie, onClick }: { tie: BracketTie; onClick: () => void }) {
   const { t } = useI18n();
+
+  // Pending: the R32 slot (or an upstream tie) has not been scraped yet.
+  if (tie.status === 'pending') {
+    return (
+      <div className="bracket-tie bracket-tie-pending">
+        <span className="bt-side">
+          <span className="bt-team">{t('bracketPending')}</span>
+        </span>
+        <span className="bt-side">
+          <span className="bt-team">{t('bracketPending')}</span>
+        </span>
+      </div>
+    );
+  }
+
   const homeWins = tie.winner === tie.home;
   const isFinal = tie.status === 'final';
+  const pHome = Math.round((tie.p_home ?? 0) * 100);
+  const pAway = Math.round((tie.p_away ?? 0) * 100);
   const homeCell = isFinal
-    ? sideScore(tie.goals_home, tie.pens_home, Math.round(tie.p_home * 100))
-    : `${Math.round(tie.p_home * 100)}%`;
+    ? sideScore(tie.goals_home, tie.pens_home, pHome)
+    : `${pHome}%`;
   const awayCell = isFinal
-    ? sideScore(tie.goals_away, tie.pens_away, Math.round(tie.p_away * 100))
-    : `${Math.round(tie.p_away * 100)}%`;
+    ? sideScore(tie.goals_away, tie.pens_away, pAway)
+    : `${pAway}%`;
   return (
     <button
       type="button"
@@ -72,13 +94,13 @@ function TieCard({ tie, onClick }: { tie: BracketTie; onClick: () => void }) {
       )}
       <span className={`bt-side ${homeWins ? 'bt-win' : ''}`}>
         <span className="bt-team">
-          {flag(tie.home)} {tie.home}
+          {flag(tie.home ?? '')} {tie.home}
         </span>
         <span className="bt-pct">{homeCell}</span>
       </span>
       <span className={`bt-side ${!homeWins ? 'bt-win' : ''}`}>
         <span className="bt-team">
-          {flag(tie.away)} {tie.away}
+          {flag(tie.away ?? '')} {tie.away}
         </span>
         <span className="bt-pct">{awayCell}</span>
       </span>
@@ -126,6 +148,11 @@ export default function KnockoutBracket({ teams }: { teams: Record<string, Team>
 
   if (error) return <div className="error-box">{error}</div>;
 
+  // A tie is openable only when both real teams are known and loaded.
+  const openable = (tie: BracketTie) =>
+    tie.status !== 'pending' && !!tie.home && !!tie.away &&
+    !!teams[tie.home] && !!teams[tie.away];
+
   return (
     <>
       <h2 className="section-title">{t('bracketTitle')}</h2>
@@ -139,13 +166,20 @@ export default function KnockoutBracket({ teams }: { teams: Record<string, Team>
               <div className="bracket-col" key={round}>
                 <div className="bracket-round-label">{t(ROUND_LABEL[round])}</div>
                 {(byRound[round] ?? []).map((tie) => (
-                  <TieCard key={tie.match} tie={tie} onClick={() => setSelected(tie)} />
+                  <TieCard
+                    key={tie.match}
+                    tie={tie}
+                    onClick={() => openable(tie) && setSelected(tie)}
+                  />
                 ))}
                 {round === 'F' &&
                   (byRound['3P'] ?? []).map((tie) => (
                     <div key={tie.match} className="bracket-third">
                       <div className="bracket-round-label">{t('thirdPlace')}</div>
-                      <TieCard tie={tie} onClick={() => setSelected(tie)} />
+                      <TieCard
+                        tie={tie}
+                        onClick={() => openable(tie) && setSelected(tie)}
+                      />
                     </div>
                   ))}
               </div>
@@ -158,6 +192,10 @@ export default function KnockoutBracket({ teams }: { teams: Record<string, Team>
       <div className="panel">
         {!odds ? (
           <span className="loading-pulse" />
+        ) : oddsRows.length === 0 ? (
+          <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>
+            {t('awaitingDraw')}
+          </div>
         ) : (
           <table className="sim-table">
             <thead>
@@ -193,9 +231,15 @@ export default function KnockoutBracket({ teams }: { teams: Record<string, Team>
         )}
       </div>
 
-      {selected && teams[selected.home] && teams[selected.away] && (
+      {selected && selected.home && selected.away &&
+        teams[selected.home] && teams[selected.away] && (
         <MatchAnalysis
-          fixture={neutralFixture(selected, t(ROUND_LABEL[selected.round]))}
+          fixture={neutralFixture(
+            selected.match,
+            selected.home,
+            selected.away,
+            t(ROUND_LABEL[selected.round]),
+          )}
           teams={teams}
           onClose={() => setSelected(null)}
         />

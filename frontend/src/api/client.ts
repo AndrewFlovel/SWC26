@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
   AdjustedTeam,
+  BenchmarkResponse,
   BracketProjection,
   Fixture,
   FormationMap,
-  GroupEntry,
-  GroupSimResponse,
   KnockoutSimResponse,
   LineupAnalysis,
   MatchResult,
@@ -41,7 +40,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const fetchTeams = () => request<Team[]>('/api/teams');
-export const fetchGroups = () => request<GroupEntry[]>('/api/groups');
 export const fetchMatches = () => request<Fixture[]>('/api/matches');
 
 export const fetchPrediction = (req: PredictRequest, signal?: AbortSignal) =>
@@ -49,12 +47,6 @@ export const fetchPrediction = (req: PredictRequest, signal?: AbortSignal) =>
     method: 'POST',
     body: JSON.stringify(req),
     signal,
-  });
-
-export const fetchGroupSim = (group: string, nSims = 3000) =>
-  request<GroupSimResponse>('/api/simulate/group', {
-    method: 'POST',
-    body: JSON.stringify({ group, n_sims: nSims }),
   });
 
 export const fetchKnockoutSim = (nSims = 4000, useResults = true) =>
@@ -84,6 +76,9 @@ export const triggerScrape = () =>
 
 export const fetchAdjustedMetrics = () =>
   request<AdjustedTeam[]>('/api/metrics/adjusted');
+
+export const fetchBenchmark = () =>
+  request<BenchmarkResponse>('/api/metrics/benchmark');
 
 // ---- Per-game player analyzer ---------------------------------------------
 

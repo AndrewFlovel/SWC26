@@ -34,11 +34,6 @@ export interface Fixture {
   venue: Venue;
 }
 
-export interface GroupEntry {
-  group: string;
-  teams: Team[];
-}
-
 export interface PredictRequest {
   home: string;
   away: string;
@@ -71,21 +66,6 @@ export interface Prediction {
   matrix_size: number;
 }
 
-export interface GroupSimRow {
-  team: string;
-  win_group_pct: number;
-  second_pct: number;
-  top2_pct: number;
-  third_pct: number;
-  avg_points: number;
-}
-
-export interface GroupSimResponse {
-  group: string;
-  n_sims: number;
-  played: number;
-  table: GroupSimRow[];
-}
 
 export type ResultStatus = 'scheduled' | 'live' | 'final';
 
@@ -163,13 +143,13 @@ export type BracketRound = 'R32' | 'R16' | 'QF' | 'SF' | '3P' | 'F';
 export interface BracketTie {
   match: number;
   round: BracketRound;
-  home: string;
-  away: string;
-  p_home: number;
-  p_away: number;
-  winner: string;
+  home: string | null;
+  away: string | null;
+  p_home: number | null;
+  p_away: number | null;
+  winner: string | null;
   source: 'projected' | 'scraped';
-  status: 'scheduled' | 'final';
+  status: 'scheduled' | 'final' | 'pending';
   goals_home: number | null;
   goals_away: number | null;
   pens_home: number | null;
@@ -179,6 +159,44 @@ export interface BracketTie {
 export interface BracketProjection {
   use_results: boolean;
   ties: BracketTie[];
+}
+
+// ---- Predicted-vs-real performance benchmark ------------------------------
+
+export interface BenchmarkMatch {
+  key: string;
+  stage: string;
+  home: string;
+  away: string;
+  goals_home: number;
+  goals_away: number;
+  actual: 'home' | 'draw' | 'away';
+  p_home: number;
+  p_draw: number;
+  p_away: number;
+  predicted: 'home' | 'draw' | 'away';
+  correct_winner: boolean;
+  brier: number;
+  log_loss: number;
+  predicted_score: string;
+  exact_hit: boolean;
+  p_actual_score: number;
+}
+
+export interface BenchmarkAggregate {
+  label: string;
+  matches: number;
+  correct_winner_pct: number;
+  brier: number;
+  log_loss: number;
+  exact_score_pct: number;
+}
+
+export interface BenchmarkResponse {
+  summary: BenchmarkAggregate;
+  by_round: BenchmarkAggregate[];
+  by_team: BenchmarkAggregate[];
+  matches: BenchmarkMatch[];
 }
 
 export const FLAGS: Record<string, string> = {
