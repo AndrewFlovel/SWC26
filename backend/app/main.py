@@ -50,6 +50,7 @@ from .schemas import (
 )
 from .services import benchmark, fbref_index, player_scraper, scraper
 from .services.metrics import get_adjusted_teams, metrics_report
+from .services.standings import real_r32_seeding
 from .services.player_store import get_squad, player_store, squad_index, team_slug
 from .services.knockout_store import knockout_store, winner_of
 from .services.results_store import results_store
@@ -147,13 +148,14 @@ def _fixed_knockout() -> dict[int, str]:
 
 @app.post("/api/simulate/knockout", response_model=KnockoutSimResponse)
 def simulate_knockout(req: KnockoutSimRequest) -> dict:
-    """Title-odds Monte Carlo over the scraped bracket: seeds the R32 straight
-    from scraped real results and plays the bracket each run, reporting every
-    team's probability of reaching R16/QF/SF/the final and winning the cup. R32
-    ties not yet drawn are pending and contribute no odds; already-decided ties
-    are locked to their recorded winners."""
+    """Title-odds Monte Carlo over the real bracket: seeds the R32 from scraped
+    knockout records, falling back to the draw implied by the final group
+    standings, and plays the bracket each run, reporting every team's
+    probability of reaching R16/QF/SF/the final and winning the cup. R32 ties
+    resolvable by neither source are pending and contribute no odds;
+    already-decided ties are locked to their recorded winners."""
     persisted = knockout_store.all() if req.use_results else {}
-    seeded = seeded_r32_from_store(persisted)
+    seeded = real_r32_seeding(persisted) if req.use_results else seeded_r32_from_store({})
     fixed_ko = _fixed_knockout() if req.use_results else None
     sim = KnockoutSimulator(_model, get_adjusted_teams(), seed=2026)
     return {
@@ -164,14 +166,15 @@ def simulate_knockout(req: KnockoutSimRequest) -> dict:
 
 @app.get("/api/bracket/projection", response_model=BracketProjectionResponse)
 def bracket_projection(use_results: bool = True) -> dict:
-    """The single most-likely bracket. The Round of 32 is seeded straight from
-    scraped real results (the knockout store); an R32 tie not yet scraped is
-    *pending* and leaves everything downstream of it unresolved. Known ties are
-    resolved by the higher predicted win probability unless a scraped final locks
-    the winner. Each tie is fully predictable on demand via /api/predict."""
+    """The single most-likely bracket. The Round of 32 is seeded from scraped
+    real results (the knockout store), falling back to the draw implied by the
+    final group standings for slots not scraped yet; a tie resolvable by neither
+    source is *pending* and leaves everything downstream of it unresolved. Known
+    ties are resolved by the higher predicted win probability unless a scraped
+    final locks the winner. Each tie is fully predictable via /api/predict."""
     teams = get_adjusted_teams()
     persisted = knockout_store.all() if use_results else {}
-    seeded = seeded_r32_from_store(persisted)
+    seeded = real_r32_seeding(persisted) if use_results else seeded_r32_from_store({})
 
     winners: dict[int, str] = {}
     losers: dict[int, str] = {}

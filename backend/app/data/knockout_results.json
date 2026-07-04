@@ -1,1 +1,266 @@
-{}
+{
+  "73": {
+    "away": "Canada",
+    "goals_away": 1,
+    "goals_home": 0,
+    "home": "South Africa",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.067118+00:00"
+  },
+  "74": {
+    "away": "Japan",
+    "goals_away": 1,
+    "goals_home": 2,
+    "home": "Brazil",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.066702+00:00"
+  },
+  "75": {
+    "away": "Paraguay",
+    "goals_away": 1,
+    "goals_home": 1,
+    "home": "Germany",
+    "pens_away": 4,
+    "pens_home": 3,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.066252+00:00"
+  },
+  "76": {
+    "away": "Morocco",
+    "goals_away": 1,
+    "goals_home": 1,
+    "home": "Netherlands",
+    "pens_away": 3,
+    "pens_home": 2,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.065818+00:00"
+  },
+  "77": {
+    "away": "Norway",
+    "goals_away": 2,
+    "goals_home": 1,
+    "home": "Ivory Coast",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.065406+00:00"
+  },
+  "78": {
+    "away": "Sweden",
+    "goals_away": 0,
+    "goals_home": 3,
+    "home": "France",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.065006+00:00"
+  },
+  "79": {
+    "away": "Ecuador",
+    "goals_away": 0,
+    "goals_home": 2,
+    "home": "Mexico",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.064591+00:00"
+  },
+  "80": {
+    "away": "DR Congo",
+    "goals_away": 1,
+    "goals_home": 2,
+    "home": "England",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.064125+00:00"
+  },
+  "81": {
+    "away": "Senegal",
+    "goals_away": 2,
+    "goals_home": 3,
+    "home": "Belgium",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.063540+00:00"
+  },
+  "82": {
+    "away": "Bosnia and Herzegovina",
+    "goals_away": 0,
+    "goals_home": 2,
+    "home": "United States",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.063038+00:00"
+  },
+  "83": {
+    "away": "Austria",
+    "goals_away": 0,
+    "goals_home": 3,
+    "home": "Spain",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.062615+00:00"
+  },
+  "84": {
+    "away": "Croatia",
+    "goals_away": 1,
+    "goals_home": 2,
+    "home": "Portugal",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.062080+00:00"
+  },
+  "85": {
+    "away": "Algeria",
+    "goals_away": 0,
+    "goals_home": 2,
+    "home": "Switzerland",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.061611+00:00"
+  },
+  "86": {
+    "away": "Egypt",
+    "goals_away": 1,
+    "goals_home": 1,
+    "home": "Australia",
+    "pens_away": 4,
+    "pens_home": 2,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.061058+00:00"
+  },
+  "87": {
+    "away": "Cape Verde",
+    "goals_away": 2,
+    "goals_home": 3,
+    "home": "Argentina",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.060361+00:00"
+  },
+  "88": {
+    "away": "Ghana",
+    "goals_away": 0,
+    "goals_home": 1,
+    "home": "Colombia",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-04T15:11:27.059686+00:00"
+  },
+  "89": {
+    "away": "Morocco",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Canada",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.067576+00:00"
+  },
+  "90": {
+    "away": "France",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Paraguay",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.067998+00:00"
+  },
+  "91": {
+    "away": "Norway",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Brazil",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.068463+00:00"
+  },
+  "92": {
+    "away": "England",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Mexico",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.068918+00:00"
+  },
+  "93": {
+    "away": "Spain",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Portugal",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.069437+00:00"
+  },
+  "94": {
+    "away": "Belgium",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "United States",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.069990+00:00"
+  },
+  "95": {
+    "away": "Egypt",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Argentina",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.070497+00:00"
+  },
+  "96": {
+    "away": "Colombia",
+    "goals_away": null,
+    "goals_home": null,
+    "home": "Switzerland",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "scheduled",
+    "updated_at": "2026-07-04T15:11:27.070993+00:00"
+  }
+}

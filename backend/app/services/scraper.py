@@ -68,14 +68,14 @@ _F_AWAY_PENS = "awayPenalties"
 # Knockout matches share the official bracket numbering (data/knockout_bracket.json):
 # the source `id` IS the bracket match number. Stage names (Spanish) map to the
 # round and are only used to validate that an id sits in the expected range.
-# --> Confirm these stage spellings against a live knockout payload.
+# Spellings confirmed against a live payload (2026-07-02).
 _KO_MIN, _KO_MAX = 73, 104
 _KO_STAGES: Dict[str, Tuple[int, int]] = {
     "Dieciseisavos de Final": (73, 88),   # Round of 32
     "Octavos de Final": (89, 96),         # Round of 16
     "Cuartos de Final": (97, 100),        # Quarter-finals
-    "Semifinales": (101, 102),            # Semi-finals
-    "Tercer Puesto": (103, 103),          # Third-place play-off
+    "Semifinal": (101, 102),              # Semi-finals
+    "Tercer Lugar": (103, 103),           # Third-place play-off
     "Final": (104, 104),                  # Final
 }
 

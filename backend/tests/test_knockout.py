@@ -7,9 +7,11 @@ from fastapi.testclient import TestClient
 
 from app.engine import EloPoissonModel, KnockoutSimulator, seeded_r32_from_store
 from app.engine.bracket import load_bracket, r32_match_numbers
-from app.engine.loader import load_teams
+from app.engine.loader import get_draw, get_fixtures, load_teams
 from app.main import app
+from app.services import standings
 from app.services.knockout_store import knockout_store, winner_of
+from app.services.results_store import results_store
 
 client = TestClient(app)
 
@@ -18,15 +20,21 @@ _MODEL = EloPoissonModel()
 
 @pytest.fixture(autouse=True)
 def isolated_knockout_store(tmp_path):
-    """Point the singleton knockout store at a temp file and reset afterwards,
-    so every test starts with an empty (fully pending) bracket."""
-    ks = knockout_store
-    original_path, original_records = ks.path, ks._records
+    """Point both singleton stores at temp files and reset afterwards, so every
+    test starts with an empty (fully pending) bracket — an empty results store
+    matters too, since complete group results now imply an R32 seeding. The
+    standings cache is version-keyed and swapping records does not bump the
+    version, so it must be cleared explicitly."""
+    ks, rs = knockout_store, results_store
+    saved = (ks.path, ks._records, rs.path, rs._records)
     ks.path = tmp_path / "knockout_results.json"
     ks._records = {}
+    rs.path = tmp_path / "results.json"
+    rs._records = {}
+    standings._computed.cache_clear()
     yield ks
-    ks.path = original_path
-    ks._records = original_records
+    ks.path, ks._records, rs.path, rs._records = saved
+    standings._computed.cache_clear()
 
 
 def _distinct_r32():
@@ -44,6 +52,16 @@ def _seed_store_full():
     for match, (home, away) in seeded.items():
         knockout_store.upsert(match, home, away, status="scheduled", source="scraped")
     return seeded
+
+
+def _finalize_all_groups():
+    """Every group match final (earlier draw-order team wins 2-0), so the full
+    R32 draw becomes derivable from the real standings."""
+    order = {g: [t.name for t in teams] for g, teams in get_draw().items()}
+    for f in get_fixtures():
+        idx = order[f["group"]]
+        gh, ga = (2, 0) if idx.index(f["home"]) < idx.index(f["away"]) else (0, 2)
+        results_store.upsert(f["id"], gh, ga, status="final", source="manual")
 
 
 # ---------------------------------------------------------------- template
@@ -200,6 +218,38 @@ def test_bracket_projection_resolves_seeded_r32():
     # deterministic
     again = {t["match"]: t for t in client.get("/api/bracket/projection").json()["ties"]}
     assert again == ties
+
+
+def test_bracket_projection_falls_back_to_group_standings():
+    """Complete group results + empty knockout store => the whole bracket is
+    derivable: no pending ties, R32 seeded from the real standings."""
+    _finalize_all_groups()
+    ties = client.get("/api/bracket/projection").json()["ties"]
+    assert len(ties) == 32
+    assert all(t["status"] == "scheduled" for t in ties)
+    r32 = [t for t in ties if t["round"] == "R32"]
+    valid = set(load_teams())
+    assert len(r32) == 16 and all(t["source"] == "projected" for t in r32)
+    seeded_names = [n for t in r32 for n in (t["home"], t["away"])]
+    assert len(set(seeded_names)) == 32 and set(seeded_names) <= valid
+    assert next(t for t in ties if t["match"] == 104)["winner"] in valid
+
+
+def test_bracket_projection_use_results_false_stays_pending():
+    """use_results=False must ignore both stores and the derived standings."""
+    _finalize_all_groups()
+    _seed_store_full()
+    ties = client.get("/api/bracket/projection?use_results=false").json()["ties"]
+    assert all(t["status"] == "pending" for t in ties)
+
+
+def test_simulate_knockout_endpoint_standings_fallback():
+    _finalize_all_groups()
+    resp = client.post("/api/simulate/knockout", json={"n_sims": 200})
+    assert resp.status_code == 200
+    table = resp.json()["table"]
+    assert len(table) == 32
+    assert abs(sum(r["champion"] for r in table) - 100) < 5
 
 
 # ---------------------------------------------------------- persisted overlay
