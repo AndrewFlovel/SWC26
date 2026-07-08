@@ -4,7 +4,10 @@ Adjusted profiles are always recomputed by replaying the ordered list of
 final results over the immutable base dataset (never by mutating stored
 team data), so the derivation is idempotent and trivially cacheable.
 Elo follows the standard update with the eloratings.net goal-difference
-multiplier; form_index follows an exponential moving average of results.
+multiplier; form_index and the xg_avg/xga_avg attack/defense rates each
+follow an exponential moving average of played-game results. (The result
+feed carries only final scores, so goals scored/conceded are the proxy
+signal for attacking and defensive output.)
 """
 
 from __future__ import annotations
@@ -25,6 +28,12 @@ class AdjustmentConfig:
     k_factor: float = 40.0
     form_alpha: float = 0.30
     home_advantage_elo: float = ModelConfig().home_advantage_elo
+    # xg_alpha is deliberately softer than form_alpha: single-game goals are
+    # noisy, so each played match only nudges the attack/defense rate. The
+    # band keeps xg_avg/xga_avg in a sane lambda range (cf. core.min_lambda).
+    xg_alpha: float = 0.25
+    xg_min: float = 0.4
+    xg_max: float = 3.2
 
 
 def _goal_diff_multiplier(gd: int) -> float:
@@ -67,6 +76,15 @@ def update_form(
     return min(max(blended, 0.0), 1.0)
 
 
+def update_rate(
+    rate_old: float, goals: int, cfg: AdjustmentConfig = AdjustmentConfig()
+) -> float:
+    """EMA of an attack/defense rate (xg_avg or xga_avg) toward a match's
+    goals, clamped to a sane lambda band."""
+    blended = cfg.xg_alpha * goals + (1.0 - cfg.xg_alpha) * rate_old
+    return min(max(blended, cfg.xg_min), cfg.xg_max)
+
+
 def apply_results(
     base: Dict[str, TeamProfile],
     fixtures: Sequence[dict],
@@ -100,4 +118,8 @@ def apply_results(
         away.elo -= delta
         home.form_index = update_form(home.form_index, _result_score(gh, ga), cfg)
         away.form_index = update_form(away.form_index, _result_score(ga, gh), cfg)
+        home.xg_avg = update_rate(home.xg_avg, gh, cfg)
+        home.xga_avg = update_rate(home.xga_avg, ga, cfg)
+        away.xg_avg = update_rate(away.xg_avg, ga, cfg)
+        away.xga_avg = update_rate(away.xga_avg, gh, cfg)
     return adjusted

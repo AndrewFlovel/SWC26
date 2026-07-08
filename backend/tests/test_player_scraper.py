@@ -16,7 +16,10 @@ SQUAD_HTML = """
   <tr>
     <td data-stat="player">Pedri</td><td data-stat="position">MF</td>
     <td data-stat="age">22</td><td data-stat="games">30</td>
-    <td data-stat="goals">3</td><td data-stat="team">Barcelona</td>
+    <td data-stat="games_starts">28</td>
+    <td data-stat="goals">3</td><td data-stat="assists">5</td>
+    <td data-stat="cards_yellow">4</td><td data-stat="cards_red">1</td>
+    <td data-stat="team">Barcelona</td>
     <td data-stat="minutes">900</td><td data-stat="minutes_90s">10.0</td>
     <td data-stat="xg_per90">0.12</td><td data-stat="xg_assist_per90">0.20</td>
     <td data-stat="shots_per90">1.5</td><td data-stat="progressive_passes_per90">6.0</td>
@@ -55,6 +58,11 @@ def test_parse_squad_merges_real_defensive_stats():
 
     pedri = players["Pedri"]
     assert pedri["position"] == "CM"            # MF -> CM
+    # Same-page appearance/discipline fields read straight through.
+    assert pedri["starts"] == 28
+    assert pedri["assists"] == 5
+    assert pedri["yellow_cards"] == 4
+    assert pedri["red_cards"] == 1
     assert pedri["xg90"] == 0.12                # attacking read straight through
     # Defensive metrics merged from the commented tables, per-90 via minutes_90s=10.
     assert pedri["tackles_won_pct"] == 60.0
@@ -122,6 +130,11 @@ def test_synthetic_squad_is_valid_and_complete():
     doc = synthesize_squad("Brazil")
     assert doc["source"] == "synthetic"
     assert len(doc["players"]) == 23
+    # New appearance/discipline fields are present on every synthetic player.
+    assert all(
+        {"starts", "assists", "yellow_cards", "red_cards"} <= p.keys()
+        for p in doc["players"]
+    )
     scored = score_squad([PlayerProfile.from_dict(r) for r in doc["players"]])
     assert all(0.0 <= p.pps <= 1.0 for p in scored)
     # Stronger team scales attacking output above a weaker one.

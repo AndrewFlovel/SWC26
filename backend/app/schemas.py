@@ -43,11 +43,6 @@ class FixtureOut(BaseModel):
     venue: VenueOut
 
 
-class GroupOut(BaseModel):
-    group: str
-    teams: List[TeamOut]
-
-
 class PredictRequest(BaseModel):
     home: str
     away: str
@@ -83,31 +78,6 @@ class PredictResponse(BaseModel):
     matrix_size: int
 
 
-class GroupSimRequest(BaseModel):
-    group: str = Field(pattern="^[A-L]$")
-    n_sims: int = Field(default=5000, ge=100, le=20000)
-    use_results: bool = Field(
-        default=True,
-        description="Condition the simulation on recorded final results.",
-    )
-
-
-class GroupSimRow(BaseModel):
-    team: str
-    win_group_pct: float
-    second_pct: float
-    top2_pct: float
-    third_pct: float
-    avg_points: float
-
-
-class GroupSimResponse(BaseModel):
-    group: str
-    n_sims: int
-    played: int = 0
-    table: List[GroupSimRow]
-
-
 class ResultIn(BaseModel):
     goals_home: int = Field(ge=0, le=20)
     goals_away: int = Field(ge=0, le=20)
@@ -126,6 +96,22 @@ class ResultOut(BaseModel):
     status: str = "scheduled"
     source: Optional[str] = None
     updated_at: Optional[str] = None
+
+
+class TeamAdjustmentIn(BaseModel):
+    """Manual per-team availability adjustment (suspensions, injuries)."""
+
+    injury_delta: float = Field(ge=-1.0, le=1.0)
+    note: str = Field(default="", max_length=280)
+
+
+class TeamAdjustmentOut(BaseModel):
+    team: str
+    injury_delta: float
+    note: str
+    updated_at: str
+    base_injury: float
+    effective_injury: float
 
 
 class ScrapeEloUpdate(BaseModel):
@@ -152,26 +138,100 @@ class AdjustedTeamOut(BaseModel):
     base_form: float
     adjusted_form: float
     form_delta: float
+    base_xg: float
+    adjusted_xg: float
+    xg_delta: float
+    base_xga: float
+    adjusted_xga: float
+    xga_delta: float
     matches_played: int
 
 
-class TournamentSimRequest(BaseModel):
-    n_sims: int = Field(default=2000, ge=100, le=10000)
+class KnockoutSimRequest(BaseModel):
+    n_sims: int = Field(default=4000, ge=100, le=10000)
+    use_results: bool = Field(
+        default=True,
+        description="Seed the R32 from scraped results and lock decided ties.",
+    )
 
 
-class TournamentSimRow(BaseModel):
-    group: str
+class KnockoutSimRow(BaseModel):
     team: str
+    group: str
     elo: int
-    win_group_pct: float
-    top2_pct: float
-    best_third_pct: float
-    qualify_r32_pct: float
+    reach_r16: float
+    reach_qf: float
+    reach_sf: float
+    reach_final: float
+    champion: float
 
 
-class TournamentSimResponse(BaseModel):
+class KnockoutSimResponse(BaseModel):
     n_sims: int
-    table: List[TournamentSimRow]
+    table: List[KnockoutSimRow]
+
+
+class BracketTie(BaseModel):
+    match: int
+    round: str            # "R32" | "R16" | "QF" | "SF" | "3P" | "F"
+    # home/away/winner are null while a tie is pending (R32 slot not yet scraped,
+    # or an upstream tie unresolved).
+    home: Optional[str] = None
+    away: Optional[str] = None
+    p_home: Optional[float] = None
+    p_away: Optional[float] = None
+    winner: Optional[str] = None
+    source: str = "projected"        # "projected" | "scraped"
+    status: str = "scheduled"        # "scheduled" | "final" | "pending"
+    goals_home: Optional[int] = None
+    goals_away: Optional[int] = None
+    pens_home: Optional[int] = None
+    pens_away: Optional[int] = None
+
+
+class BracketProjectionResponse(BaseModel):
+    use_results: bool
+    ties: List[BracketTie]
+
+
+# --------------------------------------------------------------------------- #
+# Predicted-vs-real performance benchmark
+# --------------------------------------------------------------------------- #
+
+class BenchmarkMatchOut(BaseModel):
+    key: str                 # fixture id ("A1") or knockout match number ("89")
+    stage: str               # "Group" | "R32" | "R16" | "QF" | "SF" | "3P" | "F"
+    home: str
+    away: str
+    goals_home: int
+    goals_away: int
+    actual: str              # "home" | "draw" | "away"
+    p_home: float
+    p_draw: float
+    p_away: float
+    predicted: str           # model's most likely outcome
+    correct_winner: bool
+    brier: float
+    log_loss: float
+    predicted_score: str     # model's single most likely scoreline, "i-j"
+    exact_hit: bool
+    p_actual_score: float    # model probability of the real scoreline
+
+
+class BenchmarkAggregateOut(BaseModel):
+    label: str               # global "overall", a stage, or a team name
+    matches: int
+    correct_winner_pct: float
+    brier: float
+    log_loss: float
+    exact_score_pct: float
+
+
+class BenchmarkResponse(BaseModel):
+    summary: BenchmarkAggregateOut
+    by_round: List[BenchmarkAggregateOut]
+    by_team: List[BenchmarkAggregateOut]
+    matches: List[BenchmarkMatchOut]
 
 
 # --------------------------------------------------------------------------- #
@@ -185,7 +245,11 @@ class PlayerOut(BaseModel):
     position_group: str
     age: int
     caps: int
+    starts: int
     international_goals: int
+    assists: int
+    yellow_cards: int
+    red_cards: int
     club: str
     xg90: float
     xa90: float
@@ -241,9 +305,11 @@ class PositionalBattleOut(BaseModel):
     side: str
     attacker: str
     attacker_position: str
+    attacker_age: int
     attacker_pps: float
     defender: Optional[str] = None
     defender_position: Optional[str] = None
+    defender_age: Optional[int] = None
     defender_pps: Optional[float] = None
     pms: float
     favored: str
@@ -281,6 +347,7 @@ class XiSlotOut(BaseModel):
     slot: str
     position: str
     player: str
+    age: int
     pps: float
 
 

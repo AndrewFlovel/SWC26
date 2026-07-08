@@ -9,7 +9,6 @@ from app.engine import (
     MatchContext,
     MatchPredictor,
     ModelConfig,
-    MonteCarloSimulator,
     ParameterOverrides,
 )
 from app.engine.loader import get_draw, get_fixtures, load_teams
@@ -95,15 +94,6 @@ def test_extreme_parameters_stay_finite(teams):
     assert lam_h >= ModelConfig().min_lambda
 
 
-def test_group_simulation_shape(teams):
-    sim = MonteCarloSimulator(EloPoissonModel(), seed=1)
-    table = sim.simulate_group(get_draw()["H"], n_sims=500)
-    assert len(table) == 4
-    assert table[0]["team"] == "Spain"  # overwhelming favorite of group H
-    total_top2 = sum(r["top2_pct"] for r in table)
-    assert total_top2 == pytest.approx(200.0, abs=2.0)
-
-
 def test_api_predict_endpoint():
     resp = client.post("/api/predict", json={"home": "Spain", "away": "Brazil"})
     assert resp.status_code == 200
@@ -122,14 +112,6 @@ def test_api_predict_invalid_params():
         "home": "Spain", "away": "Brazil", "home_injury": 2.5,
     })
     assert resp.status_code == 422
-
-
-def test_api_group_simulation():
-    resp = client.post("/api/simulate/group", json={"group": "J", "n_sims": 300})
-    assert resp.status_code == 200
-    table = resp.json()["table"]
-    assert len(table) == 4
-    assert table[0]["team"] == "Argentina"
 
 
 def test_api_matches_have_venues():

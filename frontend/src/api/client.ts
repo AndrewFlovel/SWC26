@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
   AdjustedTeam,
+  BenchmarkResponse,
+  BracketProjection,
   Fixture,
   FormationMap,
-  GroupEntry,
-  GroupSimResponse,
+  KnockoutSimResponse,
   LineupAnalysis,
   MatchResult,
   OptimalXiResponse,
@@ -14,6 +15,8 @@ import type {
   ResultIn,
   ScrapeResponse,
   Team,
+  TeamAdjustment,
+  TeamAdjustmentIn,
   TeamSquad,
 } from '../types';
 
@@ -39,7 +42,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const fetchTeams = () => request<Team[]>('/api/teams');
-export const fetchGroups = () => request<GroupEntry[]>('/api/groups');
 export const fetchMatches = () => request<Fixture[]>('/api/matches');
 
 export const fetchPrediction = (req: PredictRequest, signal?: AbortSignal) =>
@@ -49,11 +51,16 @@ export const fetchPrediction = (req: PredictRequest, signal?: AbortSignal) =>
     signal,
   });
 
-export const fetchGroupSim = (group: string, nSims = 3000) =>
-  request<GroupSimResponse>('/api/simulate/group', {
+export const fetchKnockoutSim = (nSims = 4000, useResults = true) =>
+  request<KnockoutSimResponse>('/api/simulate/knockout', {
     method: 'POST',
-    body: JSON.stringify({ group, n_sims: nSims }),
+    body: JSON.stringify({ n_sims: nSims, use_results: useResults }),
   });
+
+export const fetchBracketProjection = (useResults = true) =>
+  request<BracketProjection>(
+    `/api/bracket/projection?use_results=${useResults}`,
+  );
 
 export const fetchResults = () => request<MatchResult[]>('/api/results');
 
@@ -69,8 +76,25 @@ export const deleteResult = (fixtureId: string) =>
 export const triggerScrape = () =>
   request<ScrapeResponse>('/api/scrape/refresh', { method: 'POST' });
 
+export const fetchAdjustments = () =>
+  request<TeamAdjustment[]>('/api/adjustments');
+
+export const saveAdjustment = (team: string, body: TeamAdjustmentIn) =>
+  request<TeamAdjustment>(`/api/adjustments/${encodeURIComponent(team)}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+
+export const deleteAdjustment = (team: string) =>
+  request<{ status: string }>(`/api/adjustments/${encodeURIComponent(team)}`, {
+    method: 'DELETE',
+  });
+
 export const fetchAdjustedMetrics = () =>
   request<AdjustedTeam[]>('/api/metrics/adjusted');
+
+export const fetchBenchmark = () =>
+  request<BenchmarkResponse>('/api/metrics/benchmark');
 
 // ---- Per-game player analyzer ---------------------------------------------
 

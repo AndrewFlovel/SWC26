@@ -18,8 +18,14 @@ from .lineup_analyzer import (
 )
 from .player_models import FORMATIONS, POSITIONS, PlayerProfile, Slot
 from .player_scorer import player_performance_score, score_squad
+from .bracket import (
+    feeder_matches,
+    knockout_dates,
+    load_bracket,
+    seeded_r32_from_store,
+)
 from .predictor import EloPoissonModel, MatchPredictor, MatchPrediction
-from .simulator import MonteCarloSimulator, TournamentSimulator
+from .simulator import KnockoutSimulator
 
 __all__ = [
     "AdjustmentConfig",
@@ -34,8 +40,11 @@ __all__ = [
     "EloPoissonModel",
     "MatchPredictor",
     "MatchPrediction",
-    "MonteCarloSimulator",
-    "TournamentSimulator",
+    "KnockoutSimulator",
+    "load_bracket",
+    "seeded_r32_from_store",
+    "knockout_dates",
+    "feeder_matches",
     # Player analyzer
     "PlayerProfile",
     "Slot",

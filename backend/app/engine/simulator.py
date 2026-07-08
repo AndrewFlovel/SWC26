@@ -1,205 +1,213 @@
-"""Monte Carlo simulation of the 2026 group stage: single groups with FIFA
-tiebreakers and the full 12-group tournament with the best-8-thirds rule."""
+"""Monte Carlo simulation of the 2026 knockout bracket (R32 -> final).
+
+The group stage has been retired: the Round of 32 is seeded directly from
+scraped real results (the knockout store) rather than from simulated group
+standings. This module plays the published bracket many times over the *known*
+R32 ties, resolving undecided ties decisively (extra time / penalties via a
+strength-weighted coin flip) and locking already-played ties to their recorded
+winners, to tally how deep each team runs.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 import numpy as np
 
-from .core import MatchContext, TeamProfile
+from . import bracket
+from .core import ParameterOverrides, TeamProfile
 from .predictor import EloPoissonModel
 
-
-@dataclass
-class GroupRecord:
-    name: str
-    pts: int
-    gf: int
-    ga: int
-    elo: float
-
-    @property
-    def gd(self) -> int:
-        return self.gf - self.ga
+# Per-round flag: which match-number block a winner of that block has reached.
+_ROUND_OF = {
+    "reach_qf": range(89, 97),       # won an R16 tie
+    "reach_sf": range(97, 101),      # won a quarterfinal
+    "reach_final": range(101, 103),  # won a semifinal
+}
 
 
-class MonteCarloSimulator:
-    """Simulates a 4-team group with FIFA tiebreakers via CDF sampling."""
+class KnockoutSimulator:
+    """Plays the official FIFA 2026 bracket (R32 -> final) every iteration and
+    tallies how deep each team runs: reach R16/QF/SF/final and win the title.
 
-    def __init__(self, model: EloPoissonModel, seed: int = 2026) -> None:
-        self.model = model
-        self._rng = np.random.default_rng(seed)
-        self._cdf_cache: Dict[Tuple[str, str], Tuple[np.ndarray, int]] = {}
+    The R32 is seeded from scraped results; ties with no scraped matchup yet are
+    *pending* and are skipped (they and everything downstream of them stay
+    unresolved until the real draw is scraped). Undecided ties are resolved on a
+    neutral context; ties present in ``fixed_ko`` are locked to their recorded
+    winner.
 
-    def _cdf(self, home: TeamProfile, away: TeamProfile) -> Tuple[np.ndarray, int]:
-        """Cached cumulative scoreline distribution for O(log n) sampling."""
-        key = (home.name, away.name)
-        if key not in self._cdf_cache:
-            host = None
-            if home.is_host ^ away.is_host:
-                host = home.name if home.is_host else away.name
-            matrix, _, _ = self.model.score_matrix(
-                home, away, MatchContext(home_team=host)
-            )
-            self._cdf_cache[key] = (np.cumsum(matrix.ravel()), matrix.shape[1])
-        return self._cdf_cache[key]
-
-    def _sample_score(self, home: TeamProfile, away: TeamProfile) -> Tuple[int, int]:
-        cdf, ncols = self._cdf(home, away)
-        idx = int(np.searchsorted(cdf, self._rng.random()))
-        idx = min(idx, cdf.size - 1)
-        return divmod(idx, ncols)
-
-    @staticmethod
-    def _rank_records(
-        teams: Sequence[TeamProfile],
-        results: Dict[Tuple[str, str], Tuple[int, int]],
-    ) -> List[GroupRecord]:
-        """Rank a group: points -> goal difference -> goals for -> head-to-head -> Elo."""
-        stats = {t.name: GroupRecord(t.name, 0, 0, 0, t.elo) for t in teams}
-        for (h, a), (gh, ga) in results.items():
-            stats[h].gf += gh
-            stats[h].ga += ga
-            stats[a].gf += ga
-            stats[a].ga += gh
-            if gh > ga:
-                stats[h].pts += 3
-            elif gh < ga:
-                stats[a].pts += 3
-            else:
-                stats[h].pts += 1
-                stats[a].pts += 1
-
-        def h2h(name: str, tied: List[str]) -> int:
-            pts = 0
-            for (h, a), (gh, ga) in results.items():
-                if h == name and a in tied:
-                    pts += 3 if gh > ga else (1 if gh == ga else 0)
-                elif a == name and h in tied:
-                    pts += 3 if ga > gh else (1 if gh == ga else 0)
-            return pts
-
-        def base_key(r: GroupRecord) -> Tuple[int, int, int]:
-            return (r.pts, r.gd, r.gf)
-
-        order = sorted(stats.values(), key=base_key, reverse=True)
-        final: List[GroupRecord] = []
-        i = 0
-        while i < len(order):
-            block = [order[i]]
-            j = i + 1
-            while j < len(order) and base_key(order[j]) == base_key(order[i]):
-                block.append(order[j])
-                j += 1
-            if len(block) > 1:
-                names = [r.name for r in block]
-                block.sort(key=lambda r: (h2h(r.name, names), r.elo), reverse=True)
-            final.extend(block)
-            i = j
-        return final
-
-    def simulate_group_once(
-        self,
-        teams: Sequence[TeamProfile],
-        fixed_results: Optional[Dict[Tuple[str, str], Tuple[int, int]]] = None,
-    ) -> List[GroupRecord]:
-        """Pairs present in fixed_results use the recorded score instead of
-        sampling, conditioning the simulation on already-played matches."""
-        if len(teams) != 4:
-            raise ValueError("A 2026 World Cup group has exactly 4 teams.")
-        fixed = fixed_results or {}
-        pairs = [(teams[i], teams[j]) for i in range(4) for j in range(i + 1, 4)]
-        results = {
-            (h.name, a.name): fixed.get((h.name, a.name)) or self._sample_score(h, a)
-            for h, a in pairs
-        }
-        return self._rank_records(teams, results)
-
-    def simulate_group(
-        self,
-        teams: Sequence[TeamProfile],
-        n_sims: int = 10_000,
-        fixed_results: Optional[Dict[Tuple[str, str], Tuple[int, int]]] = None,
-    ) -> List[dict]:
-        """Run the group n_sims times; returns per-team qualification stats."""
-        if n_sims <= 0:
-            raise ValueError("n_sims must be positive.")
-        names = [t.name for t in teams]
-        tally = {n: {"P1": 0, "P2": 0, "P3": 0, "P4": 0, "pts": 0} for n in names}
-        for _ in range(n_sims):
-            ranked = self.simulate_group_once(teams, fixed_results)
-            for pos, rec in enumerate(ranked, start=1):
-                tally[rec.name][f"P{pos}"] += 1
-                tally[rec.name]["pts"] += rec.pts
-        rows = [
-            {
-                "team": n,
-                "win_group_pct": round(100 * tally[n]["P1"] / n_sims, 1),
-                "second_pct": round(100 * tally[n]["P2"] / n_sims, 1),
-                "top2_pct": round(100 * (tally[n]["P1"] + tally[n]["P2"]) / n_sims, 1),
-                "third_pct": round(100 * tally[n]["P3"] / n_sims, 1),
-                "avg_points": round(tally[n]["pts"] / n_sims, 2),
-            }
-            for n in names
-        ]
-        rows.sort(key=lambda r: r["top2_pct"], reverse=True)
-        return rows
-
-
-class TournamentSimulator:
-    """Simulates all 12 groups and the qualification of the 8 best thirds
-    (FIFA criteria: points -> goal difference -> goals for -> Elo proxy)."""
+    ``fatigue_fn`` (match number, home, away) -> ParameterOverrides optionally
+    shapes each tie's score distribution with per-team fatigue (rest days from
+    the schedule, real extra-time/shootout burden from the stores). Extra time
+    arising in *simulated* ties is deliberately not fed back. ``None`` keeps
+    every tie on the neutral baseline.
+    """
 
     def __init__(
         self,
         model: EloPoissonModel,
-        draw: Dict[str, List[TeamProfile]],
+        teams: Dict[str, TeamProfile],
         seed: int = 2026,
+        fatigue_fn: Optional[
+            Callable[[int, str, str], ParameterOverrides]
+        ] = None,
     ) -> None:
-        if len(draw) != 12:
-            raise ValueError("The 2026 World Cup has exactly 12 groups.")
-        self.mc = MonteCarloSimulator(model, seed=seed)
-        self.draw = draw
+        self.model = model
+        self._by_name = dict(teams)
+        self._rng = np.random.default_rng(seed)
+        self._fatigue_fn = fatigue_fn
+        # Per-tie CDF plus the home win-share conditional on a decisive
+        # result; keyed by match so per-match fatigue never bleeds across ties.
+        self._ko_cache: Dict[
+            Tuple[int, str, str], Tuple[np.ndarray, int, float]
+        ] = {}
 
-    def simulate(self, n_sims: int = 10_000) -> List[dict]:
+    def _ko_cdf(
+        self, home: TeamProfile, away: TeamProfile, match: int
+    ) -> Tuple[np.ndarray, int, float]:
+        """Neutral-venue CDF plus the home team's win probability conditional on
+        a decisive result (used to settle level knockout ties)."""
+        key = (match, home.name, away.name)
+        if key not in self._ko_cache:
+            overrides = (
+                self._fatigue_fn(match, home.name, away.name)
+                if self._fatigue_fn
+                else None
+            )
+            matrix, _, _ = self.model.score_matrix(home, away, overrides=overrides)
+            p_home = float(np.tril(matrix, -1).sum())
+            p_away = float(np.triu(matrix, 1).sum())
+            decisive = p_home + p_away
+            split = p_home / decisive if decisive > 0 else 0.5
+            self._ko_cache[key] = (np.cumsum(matrix.ravel()), matrix.shape[1], split)
+        return self._ko_cache[key]
+
+    def _resolve_knockout(self, home: str, away: str, match: int) -> Tuple[str, str]:
+        """Play a single-elimination tie to a decisive (winner, loser).
+
+        A level scoreline is settled as extra time / penalties: a coin flip
+        weighted by each side's strength (its win share given the match was
+        decided), so the stronger team is favoured but upsets remain possible.
+        """
+        cdf, ncols, split = self._ko_cdf(
+            self._by_name[home], self._by_name[away], match
+        )
+        idx = min(int(np.searchsorted(cdf, self._rng.random())), cdf.size - 1)
+        gh, ga = divmod(idx, ncols)
+        if gh > ga:
+            return home, away
+        if ga > gh:
+            return away, home
+        if self._rng.random() < split:
+            return home, away
+        return away, home
+
+    def _settle(
+        self,
+        match: int,
+        home: Optional[str],
+        away: Optional[str],
+        fixed_ko: Dict[int, str],
+    ) -> Optional[Tuple[str, str]]:
+        """Winner/loser of one tie, or ``None`` when a team is still unknown
+        (pending R32 slot, or an unresolved upstream tie). A recorded winner in
+        ``fixed_ko`` locks the result; otherwise the tie is simulated."""
+        if home is None or away is None:
+            return None
+        forced = fixed_ko.get(match)
+        if forced in (home, away):
+            return forced, (away if forced == home else home)
+        return self._resolve_knockout(home, away, match)
+
+    def _play_bracket(
+        self,
+        seeded: Dict[int, Tuple[Optional[str], Optional[str]]],
+        fixed_ko: Optional[Dict[int, str]] = None,
+        fixed_ties: Optional[Dict[int, Tuple[str, str]]] = None,
+    ) -> Tuple[Dict[int, str], Dict[int, str]]:
+        """Resolve the known R32 ties then walk the tree; return winners and
+        losers by match. Pending ties (unknown teams) are simply absent from the
+        returned maps, so downstream ties that reference them stay unresolved.
+
+        ``fixed_ties`` pins a tree tie's real matchup (from a scraped record),
+        overriding the template's ``W##``/``L##`` derivation — the source may
+        number its round-of-16 ties differently from the FIFA template, so a
+        recorded winner can only be locked onto the tie it was scraped for.
+        """
+        fixed_ko = fixed_ko or {}
+        fixed_ties = fixed_ties or {}
+        winners: Dict[int, str] = {}
+        losers: Dict[int, str] = {}
+        for match, (home, away) in seeded.items():
+            settled = self._settle(match, home, away, fixed_ko)
+            if settled is not None:
+                winners[match], losers[match] = settled
+
+        def team(ref: str) -> Optional[str]:
+            src = winners if ref[0] == "W" else losers
+            return src.get(int(ref[1:]))
+
+        for tie in bracket.load_bracket()["tree"]:
+            match = tie["match"]
+            home, away = fixed_ties.get(
+                match, (team(tie["home"]), team(tie["away"]))
+            )
+            settled = self._settle(match, home, away, fixed_ko)
+            if settled is not None:
+                winners[match], losers[match] = settled
+        return winners, losers
+
+    def simulate(
+        self,
+        seeded: Dict[int, Tuple[Optional[str], Optional[str]]],
+        n_sims: int = 4_000,
+        fixed_ko: Optional[Dict[int, str]] = None,
+        fixed_ties: Optional[Dict[int, Tuple[str, str]]] = None,
+    ) -> list[dict]:
         if n_sims <= 0:
             raise ValueError("n_sims must be positive.")
-        all_names = [t.name for g in self.draw.values() for t in g]
+        fixed_ko = fixed_ko or {}
+        # Only teams that appear in a known R32 tie can accrue deep-run odds.
+        seeded_names = {
+            name for pair in seeded.values() for name in pair if name is not None
+        }
+        if not seeded_names:
+            return []
         tally = {
-            n: {"P1": 0, "q_top2": 0, "q_third": 0, "qualified": 0}
-            for n in all_names
+            n: {"reach_r16": 0, "reach_qf": 0, "reach_sf": 0,
+                "reach_final": 0, "champion": 0}
+            for n in seeded_names
         }
 
         for _ in range(n_sims):
-            thirds: List[GroupRecord] = []
-            for teams in self.draw.values():
-                ranked = self.mc.simulate_group_once(teams)
-                for pos, rec in enumerate(ranked, start=1):
-                    if pos == 1:
-                        tally[rec.name]["P1"] += 1
-                    if pos <= 2:
-                        tally[rec.name]["q_top2"] += 1
-                        tally[rec.name]["qualified"] += 1
-                thirds.append(ranked[2])
-            thirds.sort(key=lambda r: (r.pts, r.gd, r.gf, r.elo), reverse=True)
-            for rec in thirds[:8]:
-                tally[rec.name]["q_third"] += 1
-                tally[rec.name]["qualified"] += 1
+            winners, _ = self._play_bracket(seeded, fixed_ko, fixed_ties)
+            for match, name in winners.items():
+                if name not in tally:
+                    continue
+                if match <= 88:
+                    tally[name]["reach_r16"] += 1
+                elif match in _ROUND_OF["reach_qf"]:
+                    tally[name]["reach_qf"] += 1
+                elif match in _ROUND_OF["reach_sf"]:
+                    tally[name]["reach_sf"] += 1
+                elif match in _ROUND_OF["reach_final"]:
+                    tally[name]["reach_final"] += 1
+            champ = winners.get(104)
+            if champ in tally:
+                tally[champ]["champion"] += 1
 
-        rows = []
-        for g, teams in self.draw.items():
-            for t in teams:
-                d = tally[t.name]
-                rows.append({
-                    "group": g,
-                    "team": t.name,
-                    "elo": int(t.elo),
-                    "win_group_pct": round(100 * d["P1"] / n_sims, 1),
-                    "top2_pct": round(100 * d["q_top2"] / n_sims, 1),
-                    "best_third_pct": round(100 * d["q_third"] / n_sims, 1),
-                    "qualify_r32_pct": round(100 * d["qualified"] / n_sims, 1),
-                })
-        rows.sort(key=lambda r: r["qualify_r32_pct"], reverse=True)
+        rows = [
+            {
+                "team": name,
+                "group": self._by_name[name].group,
+                "elo": int(self._by_name[name].elo),
+                "reach_r16": round(100 * d["reach_r16"] / n_sims, 1),
+                "reach_qf": round(100 * d["reach_qf"] / n_sims, 1),
+                "reach_sf": round(100 * d["reach_sf"] / n_sims, 1),
+                "reach_final": round(100 * d["reach_final"] / n_sims, 1),
+                "champion": round(100 * d["champion"] / n_sims, 1),
+            }
+            for name, d in tally.items()
+        ]
+        rows.sort(key=lambda r: (r["champion"], r["reach_final"]), reverse=True)
         return rows

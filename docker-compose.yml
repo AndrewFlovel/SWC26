@@ -9,6 +9,15 @@ services:
       - ./backend/app/data:/srv/app/data
     # Match the host user so files written to the volume stay editable.
     user: "1000:1000"
+    # Results source = mundial2026.mikeguerra4.com. All optional and passed
+    # through from the host env / .env only when set (so the code defaults
+    # apply otherwise). Set a cookie/token only if the host gates server-side
+    # requests — see .env.example.
+    environment:
+      - MUNDIAL_RESULTS_URL
+      - MUNDIAL_FIXTURES_URL
+      - MUNDIAL_COOKIE
+      - MUNDIAL_TOKEN
     restart: unless-stopped
 
   frontend:

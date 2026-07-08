@@ -34,11 +34,6 @@ export interface Fixture {
   venue: Venue;
 }
 
-export interface GroupEntry {
-  group: string;
-  teams: Team[];
-}
-
 export interface PredictRequest {
   home: string;
   away: string;
@@ -71,21 +66,6 @@ export interface Prediction {
   matrix_size: number;
 }
 
-export interface GroupSimRow {
-  team: string;
-  win_group_pct: number;
-  second_pct: number;
-  top2_pct: number;
-  third_pct: number;
-  avg_points: number;
-}
-
-export interface GroupSimResponse {
-  group: string;
-  n_sims: number;
-  played: number;
-  table: GroupSimRow[];
-}
 
 export type ResultStatus = 'scheduled' | 'live' | 'final';
 
@@ -107,6 +87,18 @@ export interface ResultIn {
   goals_home: number;
   goals_away: number;
   status: 'live' | 'final';
+}
+
+export interface TeamAdjustmentIn {
+  injury_delta: number;
+  note: string;
+}
+
+export interface TeamAdjustment extends TeamAdjustmentIn {
+  team: string;
+  updated_at: string;
+  base_injury: number;
+  effective_injury: number;
 }
 
 export interface ScrapeEloUpdate {
@@ -133,7 +125,90 @@ export interface AdjustedTeam {
   base_form: number;
   adjusted_form: number;
   form_delta: number;
+  base_xg: number;
+  adjusted_xg: number;
+  xg_delta: number;
+  base_xga: number;
+  adjusted_xga: number;
+  xga_delta: number;
   matches_played: number;
+}
+
+export interface KnockoutSimRow {
+  team: string;
+  group: string;
+  elo: number;
+  reach_r16: number;
+  reach_qf: number;
+  reach_sf: number;
+  reach_final: number;
+  champion: number;
+}
+
+export interface KnockoutSimResponse {
+  n_sims: number;
+  table: KnockoutSimRow[];
+}
+
+export type BracketRound = 'R32' | 'R16' | 'QF' | 'SF' | '3P' | 'F';
+
+export interface BracketTie {
+  match: number;
+  round: BracketRound;
+  home: string | null;
+  away: string | null;
+  p_home: number | null;
+  p_away: number | null;
+  winner: string | null;
+  source: 'projected' | 'scraped';
+  status: 'scheduled' | 'final' | 'pending';
+  goals_home: number | null;
+  goals_away: number | null;
+  pens_home: number | null;
+  pens_away: number | null;
+}
+
+export interface BracketProjection {
+  use_results: boolean;
+  ties: BracketTie[];
+}
+
+// ---- Predicted-vs-real performance benchmark ------------------------------
+
+export interface BenchmarkMatch {
+  key: string;
+  stage: string;
+  home: string;
+  away: string;
+  goals_home: number;
+  goals_away: number;
+  actual: 'home' | 'draw' | 'away';
+  p_home: number;
+  p_draw: number;
+  p_away: number;
+  predicted: 'home' | 'draw' | 'away';
+  correct_winner: boolean;
+  brier: number;
+  log_loss: number;
+  predicted_score: string;
+  exact_hit: boolean;
+  p_actual_score: number;
+}
+
+export interface BenchmarkAggregate {
+  label: string;
+  matches: number;
+  correct_winner_pct: number;
+  brier: number;
+  log_loss: number;
+  exact_score_pct: number;
+}
+
+export interface BenchmarkResponse {
+  summary: BenchmarkAggregate;
+  by_round: BenchmarkAggregate[];
+  by_team: BenchmarkAggregate[];
+  matches: BenchmarkMatch[];
 }
 
 export const FLAGS: Record<string, string> = {
@@ -200,7 +275,11 @@ export interface Player {
   position_group: string;
   age: number;
   caps: number;
+  starts: number;
   international_goals: number;
+  assists: number;
+  yellow_cards: number;
+  red_cards: number;
   club: string;
   xg90: number;
   xa90: number;
@@ -241,9 +320,11 @@ export interface PositionalBattle {
   side: 'home' | 'away';
   attacker: string;
   attacker_position: string;
+  attacker_age: number;
   attacker_pps: number;
   defender: string | null;
   defender_position: string | null;
+  defender_age: number | null;
   defender_pps: number | null;
   pms: number;
   favored: 'home' | 'away';
@@ -263,6 +344,7 @@ export interface XiSlot {
   slot: string;
   position: string;
   player: string;
+  age: number;
   pps: number;
 }
 

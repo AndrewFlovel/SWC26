@@ -50,7 +50,7 @@ export default function PositionalBattles({ analysis, homeTeam, awayTeam }: Prop
                   </span>
                 </td>
                 <td>
-                  {b.attacker}{' '}
+                  {b.attacker} <span className="muted">({b.attacker_age})</span>{' '}
                   <span className="muted">{b.attacker_pps.toFixed(2)}</span>
                   <span className="side-team">{teamName}</span>
                 </td>
@@ -62,6 +62,9 @@ export default function PositionalBattles({ analysis, homeTeam, awayTeam }: Prop
                 </td>
                 <td>
                   {b.defender ?? '—'}{' '}
+                  {b.defender_age != null && (
+                    <span className="muted">({b.defender_age})</span>
+                  )}{' '}
                   {b.defender_pps != null && (
                     <span className="muted">{b.defender_pps.toFixed(2)}</span>
                   )}
