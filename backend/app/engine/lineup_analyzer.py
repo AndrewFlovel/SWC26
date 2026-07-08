@@ -250,6 +250,30 @@ def _lineup_from_assignment(
     return [(slots[j], squad[slot_to_player[j]]) for j in range(len(slots))]
 
 
+def order_to_formation(
+    players: Sequence[PlayerProfile], formation: str
+) -> List[PlayerProfile]:
+    """Order a *fixed* set of 11 players into a formation's slots by best fit.
+
+    Unlike `optimal_xi` (which selects the best XI from a larger squad), this
+    keeps every supplied player and only decides which slot each fills, via the
+    same min-cost (slot_fit x pps) assignment. Use it to slot a confirmed XI so
+    `build_lineup`/`analyze_lineups` receive players in correct slot order.
+    """
+    if formation not in FORMATIONS:
+        raise ValueError(
+            f"Unknown formation '{formation}'; supported: {sorted(FORMATIONS)}."
+        )
+    slots = FORMATIONS[formation]
+    if len(players) != len(slots):
+        raise ValueError(
+            f"Formation '{formation}' needs {len(slots)} players, got {len(players)}."
+        )
+    score_squad(players)  # ensure pps populated
+    slot_to_player = _assign(players, slots)
+    return [players[slot_to_player[j]] for j in range(len(slots))]
+
+
 def optimal_xi(
     squad: Sequence[PlayerProfile],
     formation: str,

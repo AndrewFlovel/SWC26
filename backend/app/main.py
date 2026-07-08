@@ -6,6 +6,7 @@ Run with:
 
 from __future__ import annotations
 
+import threading
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -36,6 +37,8 @@ from .schemas import (
     KnockoutSimResponse,
     LineupAnalysisRequest,
     LineupAnalysisResponse,
+    LineupJobStatus,
+    LineupScrapeRequest,
     OptimalXiRequest,
     OptimalXiResponse,
     PlayerScrapeRequest,
@@ -52,6 +55,7 @@ from .schemas import (
 )
 from .services import benchmark, fbref_index, player_scraper, scraper
 from .services.fatigue import knockout_fatigue
+from .services.lineup_jobs import lineup_jobs, run_lineup_job
 from .services.metrics import get_adjusted_teams, metrics_report
 from .services.standings import real_r32_seeding
 from .services.player_store import get_squad, player_store, squad_index, team_slug
@@ -442,6 +446,38 @@ def scrape_discover() -> dict:
         "teams": sorted(mapping.keys()),
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@app.post("/api/scrape/lineups", response_model=LineupJobStatus, status_code=202)
+def scrape_lineups(req: LineupScrapeRequest) -> dict:
+    """Kick off (or reuse) a background confirmed-XI scrape for a fixture.
+
+    Selenium drives a headless browser, so the work runs in a daemon thread and
+    the client polls GET /api/scrape/players/status/{fixture_id}.
+    """
+    fixture = _fixtures_by_id().get(req.fixture_id)
+    if fixture is None:
+        raise HTTPException(
+            status_code=404, detail=f"Fixture '{req.fixture_id}' not found."
+        )
+    job, created = lineup_jobs.start(req.fixture_id)
+    if created:
+        threading.Thread(
+            target=run_lineup_job,
+            args=(req.fixture_id, fixture["home"], fixture["away"]),
+            daemon=True,
+        ).start()
+    return job.to_status()
+
+
+@app.get("/api/scrape/players/status/{fixture_id}", response_model=LineupJobStatus)
+def lineup_status(fixture_id: str) -> dict:
+    job = lineup_jobs.get(fixture_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404, detail=f"No lineup job for fixture '{fixture_id}'."
+        )
+    return job.to_status()
 
 
 @app.get("/api/players/{slug}")

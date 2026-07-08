@@ -362,3 +362,25 @@ class OptimalXiResponse(BaseModel):
     team: str
     opponent_team: str
     candidates: List[XiCandidate]
+
+
+class LineupScrapeRequest(BaseModel):
+    fixture_id: str
+
+
+class ConfirmedSideOut(BaseModel):
+    team: str
+    formation: str
+    lineup: List[str]          # 11 names in slot order, or [] if not applicable
+    unmatched: List[str]       # confirmed starters absent from our squad data
+    announced: bool            # Sofascore posted a confirmed XI for this side
+
+
+class LineupJobStatus(BaseModel):
+    fixture_id: str
+    status: str                # "pending" | "running" | "done" | "error"
+    home: Optional[ConfirmedSideOut] = None
+    away: Optional[ConfirmedSideOut] = None
+    messages: List[str]
+    started_at: str
+    finished_at: Optional[str] = None

@@ -7,6 +7,7 @@ import type {
   FormationMap,
   KnockoutSimResponse,
   LineupAnalysis,
+  LineupJobStatus,
   MatchResult,
   OptimalXiResponse,
   PlayerSquadResponse,
@@ -138,6 +139,83 @@ export const fetchOptimalXi = (body: OptimalXiBody) =>
   });
 
 export const fetchFormations = () => request<FormationMap>('/api/formations');
+
+// ---- Confirmed-lineup scrape (Selenium background job) ---------------------
+
+export const triggerLineupScrape = (fixtureId: string) =>
+  request<LineupJobStatus>('/api/scrape/lineups', {
+    method: 'POST',
+    body: JSON.stringify({ fixture_id: fixtureId }),
+  });
+
+export const fetchLineupStatus = (fixtureId: string) =>
+  request<LineupJobStatus>(`/api/scrape/players/status/${fixtureId}`);
+
+/**
+ * Kick off a confirmed-XI scrape and poll its status until the background job
+ * finishes. `trigger` activates the hook (0 = idle); incrementing it re-runs a
+ * fresh scrape. `onDone` fires once per run when the job reaches "done". Polling
+ * and any pending timer stop on unmount or terminal state.
+ */
+export function useConfirmedLineups(
+  fixtureId: string | null,
+  trigger: number,
+  onDone?: (status: LineupJobStatus) => void,
+  intervalMs = 3000,
+) {
+  const [status, setStatus] = useState<LineupJobStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const doneRef = useRef(onDone);
+  useEffect(() => {
+    doneRef.current = onDone;
+  }, [onDone]);
+
+  useEffect(() => {
+    if (!fixtureId || trigger <= 0) return;
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const settle = (s: LineupJobStatus) => {
+      setStatus(s);
+      if (s.status === 'done') {
+        doneRef.current?.(s);
+      } else if (s.status !== 'error') {
+        timer = window.setTimeout(poll, intervalMs);
+      }
+    };
+
+    const poll = () => {
+      fetchLineupStatus(fixtureId)
+        .then((s) => {
+          if (!cancelled) settle(s);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setError(err instanceof Error ? err.message : 'lineup poll failed');
+          timer = window.setTimeout(poll, intervalMs);
+        });
+    };
+
+    triggerLineupScrape(fixtureId)
+      .then((s) => {
+        if (cancelled) return;
+        setError(null);
+        settle(s);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : 'lineup scrape failed');
+      });
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [fixtureId, trigger, intervalMs]);
+
+  return { status, error };
+}
 
 /**
  * Debounced, race-safe live prediction hook. Re-runs 250ms after the last

@@ -34,6 +34,9 @@ La imagen del frontend se compila con `VITE_API_BASE=""`, de modo que la app hac
 peticiones relativas `/api/*` a su propio origen. nginx (ver `frontend/nginx.conf`)
 las redirige a `http://backend:8001` por la red de Compose — sin CORS de por medio.
 
+La imagen del backend incluye Chromium + chromedriver (con `CHROME_BIN`/`CHROMEDRIVER`
+preconfigurados), de modo que el scrape de alineaciones confirmadas funciona sin ajustes.
+
 ---
 
 ## Opción B — Desarrollo local
@@ -60,6 +63,12 @@ curl http://localhost:8001/api/health
 # {"status":"ok","teams":48}
 ```
 
+> **Scrape de alineaciones confirmadas (opcional).** La función "XI confirmado" usa
+> Chrome headless mediante Selenium. Instala Chrome/Chromium localmente y Selenium Manager
+> resuelve el driver automáticamente; o apunta a los binarios del sistema con las
+> variables `CHROME_BIN` / `CHROMEDRIVER` (la imagen Docker fija ambas). Sin un navegador
+> la función degrada con elegancia y todo lo demás funciona igual.
+
 ### 2. Frontend
 
 En una segunda terminal:
@@ -85,8 +94,10 @@ cd backend
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Resultado esperado: `64 passed` (motor predictivo, seguimiento de resultados, analizador
-de jugadores y scraper de jugadores).
+Resultado esperado: `141 passed` (motor predictivo, modelo de eliminatorias/fatiga,
+seguimiento de resultados, ajustes manuales de disponibilidad, analizador de jugadores,
+scraper de jugadores y el scraper de alineaciones confirmadas). Los tests de Selenium son
+totalmente offline — simulan la petición del navegador, así que no se lanza Chrome.
 
 ### 4. Build de producción del frontend (opcional)
 
@@ -119,7 +130,12 @@ npm run preview    # sirve el bundle de producción localmente
    FBref, ejecuta `python -m scripts.bootstrap_squads` desde `backend/` (añade `--force`
    para sobrescribir, `--team <Nombre>` para una sola selección). `GET /api/players`
    reporta el `source` y el recuento de jugadores por selección.
-5. **Cambia el idioma** (EN/ES/PT) con el selector de arriba a la derecha. La
+5. **Obtén el XI confirmado** con el botón "XI confirmado" de la superposición. Lanza un
+   scrape de Sofascore en segundo plano (Chrome headless) y consulta hasta terminar, luego
+   aplica al campo cada once titular anunciado. Es de mejor esfuerzo: el partido debe estar
+   mapeado en `SOFASCORE_EVENTS` y las alineaciones solo se publican poco antes del inicio
+   — si no, el analizador mantiene su once óptimo y muestra un aviso de estado.
+6. **Cambia el idioma** (EN/ES/PT) con el selector de arriba a la derecha. La
    elección se guarda en `localStorage`; en la primera visita se detecta
    automáticamente el idioma del navegador.
 

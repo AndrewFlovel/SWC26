@@ -179,6 +179,12 @@ const dictionaries = {
     benchOverall: 'Overall',
     benchMatches: 'Matches',
     stage: 'Stage',
+    confirmedXi: 'Confirmed XI',
+    fetchingLineups: 'Fetching confirmed lineups…',
+    lineupsAnnounced: 'Confirmed XI applied.',
+    lineupsNotAnnounced: 'Lineups not announced yet — showing optimal XI.',
+    lineupsUnmatched: 'No stats for confirmed starters: {names}. Keeping optimal XI.',
+    lineupsError: 'Could not fetch confirmed lineups.',
   },
   es: {
     kicker: 'Copa Mundial FIFA 2026 · Motor Predictivo',
@@ -345,6 +351,12 @@ const dictionaries = {
     benchOverall: 'Global',
     benchMatches: 'Partidos',
     stage: 'Fase',
+    confirmedXi: 'XI confirmado',
+    fetchingLineups: 'Obteniendo alineaciones confirmadas…',
+    lineupsAnnounced: 'XI confirmado aplicado.',
+    lineupsNotAnnounced: 'Alineaciones aún no anunciadas — mostrando XI óptimo.',
+    lineupsUnmatched: 'Sin datos para titulares confirmados: {names}. Se mantiene el XI óptimo.',
+    lineupsError: 'No se pudieron obtener las alineaciones confirmadas.',
   },
   pt: {
     kicker: 'Copa do Mundo FIFA 2026 · Motor Preditivo',
@@ -511,6 +523,12 @@ const dictionaries = {
     benchOverall: 'Geral',
     benchMatches: 'Partidas',
     stage: 'Fase',
+    confirmedXi: 'XI confirmado',
+    fetchingLineups: 'Buscando escalações confirmadas…',
+    lineupsAnnounced: 'XI confirmado aplicado.',
+    lineupsNotAnnounced: 'Escalações ainda não anunciadas — exibindo XI ótimo.',
+    lineupsUnmatched: 'Sem dados para titulares confirmados: {names}. Mantendo o XI ótimo.',
+    lineupsError: 'Não foi possível buscar as escalações confirmadas.',
   },
 } as const;
 

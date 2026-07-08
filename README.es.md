@@ -9,8 +9,9 @@ lesiones, carga de viajes transcontinentales, hipoxia de altitud y estrés térm
 
 Oscura, rojo sangre, impulsada por WebGL. Mueve los controles deslizantes: el motor
 recalcula en tiempo real. Abre cualquier partido para un desglose jugador por jugador:
-valoraciones de plantilla, enfrentamientos de formación y un optimizador del mejor once.
-La interfaz está disponible en **inglés, español y portugués** (selector arriba a la
+valoraciones de plantilla, enfrentamientos de formación, un optimizador del mejor once y
+una descarga con un clic de las **alineaciones confirmadas del día del partido**. La
+interfaz está disponible en **inglés, español y portugués** (selector arriba a la
 derecha; también detecta automáticamente el idioma del navegador).
 
 ## Inicio rápido (Docker)
@@ -52,8 +53,9 @@ máxima verosimilitud con decaimiento temporal estilo Dixon-Coles
 Más allá del modelo a nivel de selección, cualquier partido puede abrirse para un
 desglose **jugador por jugador**. Al seleccionar un encuentro se dispara un scraping
 híbrido de plantillas — `requests` contra las tablas de FBref (renderizadas en el
-servidor), con plantillas de referencia incluidas como respaldo fiable (Selenium queda
-reservado para las alineaciones confirmadas del día del partido). El scraping lee los
+servidor), con plantillas de referencia incluidas como respaldo fiable (Selenium con
+Chrome headless añade las alineaciones confirmadas del día del partido bajo demanda —
+ver abajo). El scraping lee los
 por-90 **ofensivos** de la tabla estándar y las métricas **defensivas reales** (entradas,
 intercepciones, despejes, duelos aéreos) de las tablas de Acciones Defensivas y Misc de
 FBref (envueltas en comentarios HTML), normalizadas a por-90 con `minutes_90s`; solo las
@@ -94,6 +96,16 @@ plantillas semilla curadas a mano (partidos Uruguay–España y Argentina–Aust
 otras 44 selecciones son plantillas de referencia versionadas (el `source` se reporta por
 selección como `seed`, `scraped` o `synthetic`).
 
+**Alineaciones confirmadas.** La acción "XI confirmado" obtiene los onces titulares
+anunciados desde Sofascore mediante Chrome headless. Como esa página se renderiza en el
+cliente y el scraping es lento, se ejecuta como tarea en segundo plano
+(`POST /api/scrape/lineups`) que la interfaz consulta
+(`GET /api/scrape/players/status/{fixture_id}`); cuando ambos onces están confirmados se
+emparejan con la plantilla, se ordenan en las posiciones de la formación y se aplican al
+campo — si no, el analizador mantiene su once óptimo. El scraper nunca lanza excepciones:
+la falta de Chrome, un partido sin mapear o alineaciones aún no anunciadas recurren al
+once óptimo.
+
 | Método | Ruta | Propósito |
 | --- | --- | --- |
 | GET | `/api/players` | Cobertura de plantillas de las 48 selecciones — recuento y `source` por equipo |
@@ -103,6 +115,8 @@ selección como `seed`, `scraped` o `synthetic`).
 | POST | `/api/analyze/lineup` | FSI, presión, duelos posicionales y mapa de dominio 3×3 de dos onces |
 | POST | `/api/analyze/optimal-xi` | Mejor once (húngaro) frente a un rival — top-3 candidatos |
 | GET | `/api/formations` | Coordenadas de las posiciones por formación (4-3-3, 4-2-3-1, 4-4-2, 3-5-2) |
+| POST | `/api/scrape/lineups` | Inicia un scrape de XI confirmado en segundo plano (Sofascore, Chrome headless) |
+| GET | `/api/scrape/players/status/{fixture_id}` | Consulta el estado/resultado del trabajo de alineación confirmada |
 
 ## API
 
@@ -126,8 +140,10 @@ backend/app/engine/    Motor predictivo (config, núcleo matemático, predictor,
                        analizador de jugadores (modelos de jugador, scorer PPS,
                        analizador de alineación/FSI/once-óptimo)
 backend/app/services/  Almacén de resultados + replay de métricas, scraper del día,
-                       scraper híbrido de jugadores (FBref) + caché de plantillas, y el
-                       resolutor de URLs de plantillas de FBref
+                       scraper híbrido de jugadores (FBref) + caché de plantillas, el
+                       resolutor de URLs de plantillas de FBref, y el scraper Selenium
+                       de alineaciones confirmadas + registro de trabajos en segundo
+                       plano (hilos)
 backend/app/data/      Dataset de 48 selecciones + catálogo de 16 sedes; data/players/
                        guarda una plantilla de referencia por selección (4 semilla,
                        44 scrapeadas/sintéticas); data/fbref_squads.json es el mapa

@@ -361,6 +361,26 @@ export interface OptimalXiResponse {
   candidates: XiCandidate[];
 }
 
+export interface ConfirmedSide {
+  team: string;
+  formation: string;
+  lineup: string[]; // 11 names in slot order, or [] when not applicable
+  unmatched: string[]; // confirmed starters absent from our squad data
+  announced: boolean; // Sofascore posted a confirmed XI for this side
+}
+
+export type LineupJobState = 'pending' | 'running' | 'done' | 'error';
+
+export interface LineupJobStatus {
+  fixture_id: string;
+  status: LineupJobState;
+  home: ConfirmedSide | null;
+  away: ConfirmedSide | null;
+  messages: string[];
+  started_at: string;
+  finished_at: string | null;
+}
+
 export interface FormationSlot {
   slot: string;
   position: string;
