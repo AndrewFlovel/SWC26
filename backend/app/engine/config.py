@@ -23,6 +23,8 @@ class ModelConfig:
             a multiplier in [1 - swing/2, 1 + swing/2].
         injury_attack_weight: Attack output lost at injury_impact = 1.0.
         injury_defense_weight: Defensive vulnerability gained at injury_impact = 1.0.
+        fatigue_attack_weight: Attack output lost at fatigue = 1.0.
+        fatigue_defense_weight: Defensive vulnerability gained at fatigue = 1.0.
         altitude_threshold_m: Altitude above which hypoxic penalties apply.
         altitude_max_penalty: Maximum attacking penalty from altitude strain.
         heat_penalty_per_index: Attacking penalty per unit of heat index (0..2).
@@ -39,6 +41,8 @@ class ModelConfig:
     form_swing: float = 0.20
     injury_attack_weight: float = 0.30
     injury_defense_weight: float = 0.30
+    fatigue_attack_weight: float = 0.15
+    fatigue_defense_weight: float = 0.10
     altitude_threshold_m: float = 1500.0
     altitude_max_penalty: float = 0.08
     heat_penalty_per_index: float = 0.05
@@ -52,3 +56,7 @@ class ModelConfig:
             raise ValueError("xg_blend_weight must lie in [0, 1].")
         if self.min_lambda <= 0:
             raise ValueError("min_lambda must be strictly positive.")
+        if not (0.0 <= self.fatigue_attack_weight <= 1.0):
+            raise ValueError("fatigue_attack_weight must lie in [0, 1].")
+        if not (0.0 <= self.fatigue_defense_weight <= 1.0):
+            raise ValueError("fatigue_defense_weight must lie in [0, 1].")

@@ -6,12 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.engine import EloPoissonModel, KnockoutSimulator, seeded_r32_from_store
-from app.engine.bracket import load_bracket, r32_match_numbers
+from app.engine.bracket import (
+    feeder_matches,
+    knockout_dates,
+    load_bracket,
+    r32_match_numbers,
+)
 from app.engine.loader import get_draw, get_fixtures, load_teams
 from app.main import app
-from app.services import standings
+from app.services import fatigue, metrics, standings
 from app.services.knockout_store import knockout_store, winner_of
 from app.services.results_store import results_store
+from app.services.team_adjust_store import team_adjust_store
 
 client = TestClient(app)
 
@@ -25,16 +31,22 @@ def isolated_knockout_store(tmp_path):
     matters too, since complete group results now imply an R32 seeding. The
     standings cache is version-keyed and swapping records does not bump the
     version, so it must be cleared explicitly."""
-    ks, rs = knockout_store, results_store
-    saved = (ks.path, ks._records, rs.path, rs._records)
+    ks, rs, ta = knockout_store, results_store, team_adjust_store
+    saved = (ks.path, ks._records, rs.path, rs._records, ta.path, ta._records)
     ks.path = tmp_path / "knockout_results.json"
     ks._records = {}
     rs.path = tmp_path / "results.json"
     rs._records = {}
+    ta.path = tmp_path / "team_adjustments.json"
+    ta._records = {}
     standings._computed.cache_clear()
+    fatigue._histories.cache_clear()
+    metrics._adjusted.cache_clear()
     yield ks
-    ks.path, ks._records, rs.path, rs._records = saved
+    ks.path, ks._records, rs.path, rs._records, ta.path, ta._records = saved
     standings._computed.cache_clear()
+    fatigue._histories.cache_clear()
+    metrics._adjusted.cache_clear()
 
 
 def _distinct_r32():
@@ -76,6 +88,25 @@ def test_bracket_template_integrity():
     assert r32_match_numbers() == tuple(range(73, 89))
 
 
+def test_bracket_dates_and_feeders_integrity():
+    from datetime import date
+
+    dates = knockout_dates()
+    assert set(dates.keys()) == set(range(73, 105))
+    parsed = {m: date.fromisoformat(d) for m, d in dates.items()}
+    # each round starts no earlier than the previous one ends
+    assert max(parsed[m] for m in range(73, 89)) < min(parsed[m] for m in range(89, 97))
+    assert max(parsed[m] for m in range(89, 97)) < min(parsed[m] for m in range(97, 101))
+    assert max(parsed[m] for m in range(97, 101)) < min(parsed[m] for m in (101, 102))
+    assert parsed[103] < parsed[104]
+
+    feeders = feeder_matches()
+    assert all(feeders[m] == (None, None) for m in range(73, 89))
+    assert feeders[97] == (89, 90)
+    assert feeders[103] == (101, 102)
+    assert feeders[104] == (101, 102)
+
+
 # ---------------------------------------------------------------- store seeding
 
 def test_seeded_r32_empty_store_is_all_pending():
@@ -104,7 +135,7 @@ def test_seeded_r32_partial_leaves_rest_pending():
 def test_resolve_knockout_is_always_decisive():
     sim = KnockoutSimulator(_MODEL, load_teams(), seed=7)
     for _ in range(200):
-        winner, loser = sim._resolve_knockout("Spain", "Haiti")
+        winner, loser = sim._resolve_knockout("Spain", "Haiti", 73)
         assert {winner, loser} == {"Spain", "Haiti"}
         assert winner != loser
 
@@ -114,7 +145,7 @@ def test_resolve_knockout_favours_the_stronger_side():
     sim = KnockoutSimulator(_MODEL, teams, seed=11)
     strong = max(teams.values(), key=lambda t: t.elo).name
     weak = min(teams.values(), key=lambda t: t.elo).name
-    wins = sum(sim._resolve_knockout(strong, weak)[0] == strong for _ in range(400))
+    wins = sum(sim._resolve_knockout(strong, weak, 73)[0] == strong for _ in range(400))
     assert wins > 280  # heavy favourite clears 70%
 
 
@@ -160,6 +191,37 @@ def test_play_bracket_respects_fixed_ko():
     assert winners[73] == away73 and losers[73] == home73
     # the forced winner is carried into the R16 tie fed by W73 (match 90)
     assert away73 in (winners[90], losers[90])
+
+
+def test_play_bracket_pins_scraped_tree_matchups():
+    """A scraped tree record's real matchup overrides the template refs: the
+    source may number R16 ties differently, so a recorded winner must lock
+    onto the tie it was scraped for — never onto the template-derived pairing.
+    An eliminated team must accrue no deep-run odds."""
+    seeded = _distinct_r32()
+    # Template: 89 = W74 v W77 and 90 = W73 v W75. Model a source that numbers
+    # the two ties the other way around and records both results.
+    home73, _ = seeded[73]
+    home74, _ = seeded[74]
+    home75, _ = seeded[75]
+    home77, _ = seeded[77]
+    fixed_ties = {89: (home73, home75), 90: (home74, home77)}
+    fixed_ko = {
+        73: home73, 74: home74, 75: home75, 77: home77,
+        89: home75, 90: home74,
+    }
+    sim = KnockoutSimulator(_MODEL, load_teams(), seed=9)
+    winners, losers = sim._play_bracket(seeded, fixed_ko, fixed_ties)
+    assert winners[89] == home75 and losers[89] == home73
+    assert winners[90] == home74 and losers[90] == home77
+    # the template-derived contender (winner of 74) never entered tie 89
+    assert home74 not in (winners[89], losers[89])
+
+    table = KnockoutSimulator(_MODEL, load_teams(), seed=9).simulate(
+        seeded, n_sims=200, fixed_ko=fixed_ko, fixed_ties=fixed_ties
+    )
+    eliminated = next(r for r in table if r["team"] == home73)
+    assert eliminated["reach_qf"] == 0.0  # locked out by the pinned real ties
 
 
 def test_play_bracket_pending_slot_stops_progression():

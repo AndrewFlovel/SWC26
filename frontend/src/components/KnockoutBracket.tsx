@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchBracketProjection, fetchKnockoutSim } from '../api/client';
+import {
+  fetchBracketProjection,
+  fetchKnockoutSim,
+  triggerScrape,
+} from '../api/client';
 import { useI18n, type TranslationKey } from '../i18n';
 import type {
   BracketRound,
@@ -12,6 +16,11 @@ import { flag } from '../types';
 import MatchAnalysis from './MatchAnalysis';
 
 const ROUND_ORDER: BracketRound[] = ['R32', 'R16', 'QF', 'SF', 'F'];
+
+// Refresh the played results once per browser session: the bracket must be
+// projected from everything played up to now, but a language switch or a
+// remount should not re-hit the external source.
+let scrapedThisSession = false;
 
 const ROUND_LABEL: Record<BracketRound, TranslationKey> = {
   R32: 'roundOf32',
@@ -115,24 +124,42 @@ export default function KnockoutBracket({ teams }: { teams: Record<string, Team>
   const [nSims, setNSims] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<BracketTie | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetchBracketProjection()
-      .then((r) => !cancelled && setTies(r.ties))
-      .catch((e: unknown) =>
-        !cancelled && setError(e instanceof Error ? e.message : t('knockoutFailed')),
-      );
-    fetchKnockoutSim()
-      .then((r) => {
-        if (!cancelled) {
-          setOdds(r.table);
-          setNSims(r.n_sims);
+    const load = async () => {
+      // Scrape everything played up to now FIRST, so the projection and the
+      // simulation below start from the freshest real results. Best-effort:
+      // a failed scrape must never block the predictions.
+      if (!scrapedThisSession) {
+        setRefreshing(true);
+        try {
+          await triggerScrape();
+        } catch {
+          /* offline / gated source — predict from what is stored */
         }
-      })
-      .catch((e: unknown) =>
-        !cancelled && setError(e instanceof Error ? e.message : t('knockoutFailed')),
-      );
+        scrapedThisSession = true;
+        if (!cancelled) setRefreshing(false);
+      }
+      if (cancelled) return;
+      fetchBracketProjection()
+        .then((r) => !cancelled && setTies(r.ties))
+        .catch((e: unknown) =>
+          !cancelled && setError(e instanceof Error ? e.message : t('knockoutFailed')),
+        );
+      fetchKnockoutSim()
+        .then((r) => {
+          if (!cancelled) {
+            setOdds(r.table);
+            setNSims(r.n_sims);
+          }
+        })
+        .catch((e: unknown) =>
+          !cancelled && setError(e instanceof Error ? e.message : t('knockoutFailed')),
+        );
+    };
+    void load();
     return () => {
       cancelled = true;
     };
@@ -158,6 +185,11 @@ export default function KnockoutBracket({ teams }: { teams: Record<string, Team>
       <h2 className="section-title">{t('bracketTitle')}</h2>
       <div className="panel" style={{ marginBottom: 22 }}>
         <p className="bracket-desc">{t('bracketDesc')}</p>
+        {refreshing && (
+          <div className="bracket-refresh">
+            {t('bracketRefreshing')} <span className="loading-pulse" />
+          </div>
+        )}
         {!ties ? (
           <span className="loading-pulse" />
         ) : (

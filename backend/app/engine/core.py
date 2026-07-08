@@ -58,6 +58,8 @@ class ParameterOverrides:
     away_form: Optional[float] = None
     home_injury: Optional[float] = None
     away_injury: Optional[float] = None
+    home_fatigue: Optional[float] = None
+    away_fatigue: Optional[float] = None
     xg_blend_weight: Optional[float] = None
     rho: Optional[float] = None
 
@@ -84,8 +86,10 @@ def _team_factors(
     cfg: ModelConfig,
     form_override: Optional[float],
     injury_override: Optional[float],
+    fatigue: float = 0.0,
 ) -> Tuple[float, float]:
-    """Attack and defense multipliers from form momentum and injury attrition.
+    """Attack and defense multipliers from form momentum, injury attrition
+    and accumulated fatigue (fatigue = 0 is an exact no-op).
 
     Returns:
         (attack_factor, defense_factor) where defense_factor > 1 means the
@@ -95,10 +99,13 @@ def _team_factors(
     injury = profile.injury_impact if injury_override is None else injury_override
     form = min(max(form, 0.0), 1.0)
     injury = min(max(injury, 0.0), 1.0)
+    fatigue = min(max(fatigue, 0.0), 1.0)
 
     form_mult = 1.0 + (form - 0.5) * cfg.form_swing
     attack = form_mult * (1.0 - injury * cfg.injury_attack_weight)
     defense = (2.0 - form_mult) * (1.0 + injury * cfg.injury_defense_weight)
+    attack *= 1.0 - fatigue * cfg.fatigue_attack_weight
+    defense *= 1.0 + fatigue * cfg.fatigue_defense_weight
     return max(attack, 0.05), max(defense, 0.05)
 
 
@@ -118,8 +125,12 @@ def compute_lambdas(
     ctx = ctx or MatchContext()
     ov = overrides or ParameterOverrides()
 
-    att_h, def_h = _team_factors(home, cfg, ov.home_form, ov.home_injury)
-    att_a, def_a = _team_factors(away, cfg, ov.away_form, ov.away_injury)
+    att_h, def_h = _team_factors(
+        home, cfg, ov.home_form, ov.home_injury, ov.home_fatigue or 0.0
+    )
+    att_a, def_a = _team_factors(
+        away, cfg, ov.away_form, ov.away_injury, ov.away_fatigue or 0.0
+    )
 
     elo_h, elo_a = elo_to_lambdas(
         home.elo, away.elo, cfg,

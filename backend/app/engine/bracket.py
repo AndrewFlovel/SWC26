@@ -40,6 +40,31 @@ def r32_match_numbers() -> Tuple[int, ...]:
     return tuple(tie["match"] for tie in load_bracket()["r32"])
 
 
+@lru_cache(maxsize=1)
+def knockout_dates() -> Dict[int, str]:
+    """Match number -> official scheduled date (ISO), from the template."""
+    bracket = load_bracket()
+    return {
+        tie["match"]: tie["date"] for tie in (*bracket["r32"], *bracket["tree"])
+    }
+
+
+@lru_cache(maxsize=1)
+def feeder_matches() -> Dict[int, Tuple[Optional[int], Optional[int]]]:
+    """Match number -> (home-side feeder match, away-side feeder match).
+
+    R32 matches have no feeders and map to ``(None, None)``; tree entries
+    decode their ``W##``/``L##`` refs (the third-place match thus feeds from
+    the two semi-finals).
+    """
+    feeders: Dict[int, Tuple[Optional[int], Optional[int]]] = {
+        tie["match"]: (None, None) for tie in load_bracket()["r32"]
+    }
+    for tie in load_bracket()["tree"]:
+        feeders[tie["match"]] = (int(tie["home"][1:]), int(tie["away"][1:]))
+    return feeders
+
+
 def seeded_r32_from_store(
     store_records: Dict[str, dict],
 ) -> Dict[int, Tuple[Optional[str], Optional[str]]]:

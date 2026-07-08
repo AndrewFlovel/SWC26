@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import date as _date
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional
@@ -67,6 +68,7 @@ class KnockoutStore:
         pens_away: Optional[int] = None,
         status: str = "scheduled",
         source: str = "scraped",
+        date: Optional[str] = None,
     ) -> dict:
         if not MIN_MATCH <= match <= MAX_MATCH:
             raise ValueError(f"Knockout match must be {MIN_MATCH}-{MAX_MATCH}.")
@@ -81,6 +83,12 @@ class KnockoutStore:
         for g in (goals_home, goals_away, pens_home, pens_away):
             if g is not None and g < 0:
                 raise ValueError("Goals/penalties must be non-negative.")
+        if date is not None:
+            try:
+                _date.fromisoformat(str(date)[:10])
+                date = str(date)[:10]
+            except ValueError:
+                date = None  # a bad scraped date must not block the record
         record = {
             "home": home,
             "away": away,
@@ -90,6 +98,7 @@ class KnockoutStore:
             "pens_away": None if pens_away is None else int(pens_away),
             "status": status,
             "source": source,
+            "date": date,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         self._records[str(match)] = record

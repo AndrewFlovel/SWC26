@@ -46,14 +46,18 @@ from .schemas import (
     ResultOut,
     ScorelineOut,
     ScrapeResponse,
+    TeamAdjustmentIn,
+    TeamAdjustmentOut,
     TeamOut,
 )
 from .services import benchmark, fbref_index, player_scraper, scraper
+from .services.fatigue import knockout_fatigue
 from .services.metrics import get_adjusted_teams, metrics_report
 from .services.standings import real_r32_seeding
 from .services.player_store import get_squad, player_store, squad_index, team_slug
 from .services.knockout_store import knockout_store, winner_of
 from .services.results_store import results_store
+from .services.team_adjust_store import team_adjust_store
 
 app = FastAPI(
     title="SWC26 — World Cup 2026 Analytics Engine",
@@ -153,14 +157,30 @@ def simulate_knockout(req: KnockoutSimRequest) -> dict:
     standings, and plays the bracket each run, reporting every team's
     probability of reaching R16/QF/SF/the final and winning the cup. R32 ties
     resolvable by neither source are pending and contribute no odds;
-    already-decided ties are locked to their recorded winners."""
+    already-decided ties are locked to their recorded winners. Each undecided
+    tie's distribution is shaped by accumulated fatigue (rest days, extra-time
+    burden from played games); use_results=False stays fully a-priori."""
+    teams = get_adjusted_teams()
     persisted = knockout_store.all() if req.use_results else {}
     seeded = real_r32_seeding(persisted) if req.use_results else seeded_r32_from_store({})
     fixed_ko = _fixed_knockout() if req.use_results else None
-    sim = KnockoutSimulator(_model, get_adjusted_teams(), seed=2026)
+    # A scraped record always carries the real matchup for its tie: pin tree
+    # ties to it (the source may number R16 ties differently from the FIFA
+    # template, so recorded winners only lock onto their scraped tie).
+    fixed_ties = {
+        int(key): (rec["home"], rec["away"])
+        for key, rec in persisted.items()
+        if int(key) >= 89 and rec["home"] in teams and rec["away"] in teams
+    }
+    sim = KnockoutSimulator(
+        _model, teams, seed=2026,
+        fatigue_fn=knockout_fatigue if req.use_results else None,
+    )
     return {
         "n_sims": req.n_sims,
-        "table": sim.simulate(seeded, n_sims=req.n_sims, fixed_ko=fixed_ko),
+        "table": sim.simulate(
+            seeded, n_sims=req.n_sims, fixed_ko=fixed_ko, fixed_ties=fixed_ties
+        ),
     }
 
 
@@ -193,7 +213,8 @@ def bracket_projection(use_results: bool = True) -> dict:
                 "source": "scraped" if rec else "projected", "status": "pending",
             })
             return
-        pred = _predictor.predict(teams[home], teams[away])
+        overrides = knockout_fatigue(match, home, away) if use_results else None
+        pred = _predictor.predict(teams[home], teams[away], overrides=overrides)
         tie: dict = {
             "match": match, "round": rnd, "home": home, "away": away,
             "p_home": pred.p_home, "p_away": pred.p_away,
@@ -274,6 +295,45 @@ def delete_result(fixture_id: str) -> dict:
             status_code=404, detail=f"Fixture '{fixture_id}' not found."
         )
     results_store.delete(fixture_id)
+    return {"status": "deleted"}
+
+
+def _adjustment_out(team: str, record: dict) -> dict:
+    return {
+        "team": team,
+        "injury_delta": record["injury_delta"],
+        "note": record["note"],
+        "updated_at": record["updated_at"],
+        "base_injury": load_teams()[team].injury_impact,
+        "effective_injury": get_adjusted_teams()[team].injury_impact,
+    }
+
+
+@app.get("/api/adjustments", response_model=list[TeamAdjustmentOut])
+def list_adjustments() -> list[dict]:
+    """Manual availability adjustments currently in effect, sorted by team."""
+    return [
+        _adjustment_out(team, rec)
+        for team, rec in sorted(team_adjust_store.all().items())
+        if team in load_teams()
+    ]
+
+
+@app.put("/api/adjustments/{team}", response_model=TeamAdjustmentOut)
+def put_adjustment(team: str, body: TeamAdjustmentIn) -> dict:
+    """Record real suspensions/injuries for a team: the delta is added to its
+    baseline injury impact (clamped to [0, 1]) and feeds every prediction."""
+    if team not in load_teams():
+        raise HTTPException(status_code=404, detail=f"Team '{team}' not found.")
+    record = team_adjust_store.upsert(team, body.injury_delta, note=body.note)
+    return _adjustment_out(team, record)
+
+
+@app.delete("/api/adjustments/{team}")
+def delete_adjustment(team: str) -> dict:
+    if team not in load_teams():
+        raise HTTPException(status_code=404, detail=f"Team '{team}' not found.")
+    team_adjust_store.delete(team)
     return {"status": "deleted"}
 
 

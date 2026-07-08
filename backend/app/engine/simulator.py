@@ -10,12 +10,12 @@ winners, to tally how deep each team runs.
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 import numpy as np
 
 from . import bracket
-from .core import TeamProfile
+from .core import ParameterOverrides, TeamProfile
 from .predictor import EloPoissonModel
 
 # Per-round flag: which match-number block a winner of that block has reached.
@@ -35,6 +35,12 @@ class KnockoutSimulator:
     unresolved until the real draw is scraped). Undecided ties are resolved on a
     neutral context; ties present in ``fixed_ko`` are locked to their recorded
     winner.
+
+    ``fatigue_fn`` (match number, home, away) -> ParameterOverrides optionally
+    shapes each tie's score distribution with per-team fatigue (rest days from
+    the schedule, real extra-time/shootout burden from the stores). Extra time
+    arising in *simulated* ties is deliberately not fed back. ``None`` keeps
+    every tie on the neutral baseline.
     """
 
     def __init__(
@@ -42,22 +48,33 @@ class KnockoutSimulator:
         model: EloPoissonModel,
         teams: Dict[str, TeamProfile],
         seed: int = 2026,
+        fatigue_fn: Optional[
+            Callable[[int, str, str], ParameterOverrides]
+        ] = None,
     ) -> None:
         self.model = model
         self._by_name = dict(teams)
         self._rng = np.random.default_rng(seed)
-        # Neutral-venue CDF plus the home win-share conditional on a decisive
-        # result, cached per matchup.
-        self._ko_cache: Dict[Tuple[str, str], Tuple[np.ndarray, int, float]] = {}
+        self._fatigue_fn = fatigue_fn
+        # Per-tie CDF plus the home win-share conditional on a decisive
+        # result; keyed by match so per-match fatigue never bleeds across ties.
+        self._ko_cache: Dict[
+            Tuple[int, str, str], Tuple[np.ndarray, int, float]
+        ] = {}
 
     def _ko_cdf(
-        self, home: TeamProfile, away: TeamProfile
+        self, home: TeamProfile, away: TeamProfile, match: int
     ) -> Tuple[np.ndarray, int, float]:
         """Neutral-venue CDF plus the home team's win probability conditional on
         a decisive result (used to settle level knockout ties)."""
-        key = (home.name, away.name)
+        key = (match, home.name, away.name)
         if key not in self._ko_cache:
-            matrix, _, _ = self.model.score_matrix(home, away)
+            overrides = (
+                self._fatigue_fn(match, home.name, away.name)
+                if self._fatigue_fn
+                else None
+            )
+            matrix, _, _ = self.model.score_matrix(home, away, overrides=overrides)
             p_home = float(np.tril(matrix, -1).sum())
             p_away = float(np.triu(matrix, 1).sum())
             decisive = p_home + p_away
@@ -65,14 +82,16 @@ class KnockoutSimulator:
             self._ko_cache[key] = (np.cumsum(matrix.ravel()), matrix.shape[1], split)
         return self._ko_cache[key]
 
-    def _resolve_knockout(self, home: str, away: str) -> Tuple[str, str]:
+    def _resolve_knockout(self, home: str, away: str, match: int) -> Tuple[str, str]:
         """Play a single-elimination tie to a decisive (winner, loser).
 
         A level scoreline is settled as extra time / penalties: a coin flip
         weighted by each side's strength (its win share given the match was
         decided), so the stronger team is favoured but upsets remain possible.
         """
-        cdf, ncols, split = self._ko_cdf(self._by_name[home], self._by_name[away])
+        cdf, ncols, split = self._ko_cdf(
+            self._by_name[home], self._by_name[away], match
+        )
         idx = min(int(np.searchsorted(cdf, self._rng.random())), cdf.size - 1)
         gh, ga = divmod(idx, ncols)
         if gh > ga:
@@ -98,17 +117,25 @@ class KnockoutSimulator:
         forced = fixed_ko.get(match)
         if forced in (home, away):
             return forced, (away if forced == home else home)
-        return self._resolve_knockout(home, away)
+        return self._resolve_knockout(home, away, match)
 
     def _play_bracket(
         self,
         seeded: Dict[int, Tuple[Optional[str], Optional[str]]],
         fixed_ko: Optional[Dict[int, str]] = None,
+        fixed_ties: Optional[Dict[int, Tuple[str, str]]] = None,
     ) -> Tuple[Dict[int, str], Dict[int, str]]:
         """Resolve the known R32 ties then walk the tree; return winners and
         losers by match. Pending ties (unknown teams) are simply absent from the
-        returned maps, so downstream ties that reference them stay unresolved."""
+        returned maps, so downstream ties that reference them stay unresolved.
+
+        ``fixed_ties`` pins a tree tie's real matchup (from a scraped record),
+        overriding the template's ``W##``/``L##`` derivation — the source may
+        number its round-of-16 ties differently from the FIFA template, so a
+        recorded winner can only be locked onto the tie it was scraped for.
+        """
         fixed_ko = fixed_ko or {}
+        fixed_ties = fixed_ties or {}
         winners: Dict[int, str] = {}
         losers: Dict[int, str] = {}
         for match, (home, away) in seeded.items():
@@ -121,11 +148,13 @@ class KnockoutSimulator:
             return src.get(int(ref[1:]))
 
         for tie in bracket.load_bracket()["tree"]:
-            settled = self._settle(
-                tie["match"], team(tie["home"]), team(tie["away"]), fixed_ko
+            match = tie["match"]
+            home, away = fixed_ties.get(
+                match, (team(tie["home"]), team(tie["away"]))
             )
+            settled = self._settle(match, home, away, fixed_ko)
             if settled is not None:
-                winners[tie["match"]], losers[tie["match"]] = settled
+                winners[match], losers[match] = settled
         return winners, losers
 
     def simulate(
@@ -133,6 +162,7 @@ class KnockoutSimulator:
         seeded: Dict[int, Tuple[Optional[str], Optional[str]]],
         n_sims: int = 4_000,
         fixed_ko: Optional[Dict[int, str]] = None,
+        fixed_ties: Optional[Dict[int, Tuple[str, str]]] = None,
     ) -> list[dict]:
         if n_sims <= 0:
             raise ValueError("n_sims must be positive.")
@@ -150,7 +180,7 @@ class KnockoutSimulator:
         }
 
         for _ in range(n_sims):
-            winners, _ = self._play_bracket(seeded, fixed_ko)
+            winners, _ = self._play_bracket(seeded, fixed_ko, fixed_ties)
             for match, name in winners.items():
                 if name not in tally:
                     continue

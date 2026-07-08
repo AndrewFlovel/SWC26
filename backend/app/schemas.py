@@ -98,6 +98,22 @@ class ResultOut(BaseModel):
     updated_at: Optional[str] = None
 
 
+class TeamAdjustmentIn(BaseModel):
+    """Manual per-team availability adjustment (suspensions, injuries)."""
+
+    injury_delta: float = Field(ge=-1.0, le=1.0)
+    note: str = Field(default="", max_length=280)
+
+
+class TeamAdjustmentOut(BaseModel):
+    team: str
+    injury_delta: float
+    note: str
+    updated_at: str
+    base_injury: float
+    effective_injury: float
+
+
 class ScrapeEloUpdate(BaseModel):
     team: str
     live_elo: float

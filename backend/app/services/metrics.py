@@ -1,8 +1,9 @@
-"""Adjusted-metrics provider: base profiles + replayed final results.
+"""Adjusted-metrics provider: base profiles + replayed final results +
+manual availability adjustments.
 
 Base loaders in engine.loader stay immutably lru_cached; all mutability
-lives in results_store.version, which keys the cache here, so every
-write to the store invalidates the derivation on the next request
+lives in the stores' version counters, which key the cache here, so every
+write to either store invalidates the derivation on the next request
 (replaying <= 72 matches is microseconds).
 """
 
@@ -15,17 +16,26 @@ from ..engine.adjuster import AdjustmentConfig, apply_results
 from ..engine.core import TeamProfile
 from ..engine.loader import get_fixtures, load_teams
 from .results_store import results_store
+from .team_adjust_store import team_adjust_store
 
 ADJ_CFG = AdjustmentConfig()
 
 
 @lru_cache(maxsize=4)
-def _adjusted(version: int) -> Dict[str, TeamProfile]:
-    return apply_results(load_teams(), get_fixtures(), results_store.all(), ADJ_CFG)
+def _adjusted(results_version: int, adjust_version: int) -> Dict[str, TeamProfile]:
+    teams = apply_results(load_teams(), get_fixtures(), results_store.all(), ADJ_CFG)
+    for name, rec in team_adjust_store.all().items():
+        profile = teams.get(name)
+        if profile is not None:
+            profile.injury_impact = min(
+                max(profile.injury_impact + float(rec.get("injury_delta", 0.0)), 0.0),
+                1.0,
+            )
+    return teams
 
 
 def get_adjusted_teams() -> Dict[str, TeamProfile]:
-    return _adjusted(results_store.version)
+    return _adjusted(results_store.version, team_adjust_store.version)
 
 
 def _matches_played() -> Dict[str, int]:

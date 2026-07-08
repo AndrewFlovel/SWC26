@@ -10,6 +10,7 @@ import { useI18n } from '../i18n';
 import type { AdjustedTeam, MatchResult, ScrapeResponse } from '../types';
 import { flag } from '../types';
 import MetricsPanel from './MetricsPanel';
+import TeamAdjustments from './TeamAdjustments';
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 const MATCHDAYS = [1, 2, 3];
@@ -236,6 +237,8 @@ export default function ResultsControl() {
           </div>
         );
       })}
+
+      <TeamAdjustments onChanged={reload} />
 
       <MetricsPanel metrics={metrics} />
     </>

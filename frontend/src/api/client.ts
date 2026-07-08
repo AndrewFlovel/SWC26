@@ -15,6 +15,8 @@ import type {
   ResultIn,
   ScrapeResponse,
   Team,
+  TeamAdjustment,
+  TeamAdjustmentIn,
   TeamSquad,
 } from '../types';
 
@@ -73,6 +75,20 @@ export const deleteResult = (fixtureId: string) =>
 
 export const triggerScrape = () =>
   request<ScrapeResponse>('/api/scrape/refresh', { method: 'POST' });
+
+export const fetchAdjustments = () =>
+  request<TeamAdjustment[]>('/api/adjustments');
+
+export const saveAdjustment = (team: string, body: TeamAdjustmentIn) =>
+  request<TeamAdjustment>(`/api/adjustments/${encodeURIComponent(team)}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+
+export const deleteAdjustment = (team: string) =>
+  request<{ status: string }>(`/api/adjustments/${encodeURIComponent(team)}`, {
+    method: 'DELETE',
+  });
 
 export const fetchAdjustedMetrics = () =>
   request<AdjustedTeam[]>('/api/metrics/adjusted');

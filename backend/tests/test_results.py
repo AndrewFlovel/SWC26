@@ -457,6 +457,38 @@ def test_store_scraped_knockout_does_not_overwrite_manual():
     assert knockout_store.get(73)["source"] == "manual"
 
 
+def test_parse_knockout_keeps_iso_kickoff_date():
+    payload = [
+        {"id": 73, "stage": "Dieciseisavos de Final",
+         "homeTeam": {"name": "Sudáfrica"}, "awayTeam": {"name": "Canadá"},
+         "homeScore": 1, "awayScore": 0, "matchDate": "2026-06-28T18:00:00Z"},
+        {"id": 74, "stage": "Dieciseisavos de Final",
+         "homeTeam": {"name": "Brasil"}, "awayTeam": {"name": "Japón"},
+         "homeScore": 2, "awayScore": 1, "date": "not-a-date"},
+        {"id": 75, "stage": "Dieciseisavos de Final",
+         "homeTeam": {"name": "Alemania"}, "awayTeam": {"name": "Paraguay"},
+         "homeScore": 1, "awayScore": 1},
+    ]
+    by_match = {p["match"]: p for p in scraper._parse_knockout(payload)}
+    assert by_match[73]["date"] == "2026-06-28"   # datetime trimmed to a date
+    assert by_match[74]["date"] is None           # garbage never crashes
+    assert by_match[75]["date"] is None           # absent is fine
+
+
+def test_scraped_knockout_date_lands_on_the_record():
+    parsed = [{"match": 73, "home": "Spain", "away": "France",
+               "goals_home": 2, "goals_away": 1, "pens_home": None,
+               "pens_away": None, "date": "2026-06-28", "finished": True}]
+    assert scraper._store_scraped_knockout(parsed, []) == 1
+    assert knockout_store.get(73)["date"] == "2026-06-28"
+    # a later scrape without a date keeps the recorded one
+    rescrape = [{"match": 73, "home": "Spain", "away": "France",
+                 "goals_home": 2, "goals_away": 1, "pens_home": None,
+                 "pens_away": None, "date": None, "finished": True}]
+    assert scraper._store_scraped_knockout(rescrape, []) == 1
+    assert knockout_store.get(73)["date"] == "2026-06-28"
+
+
 def _ko(match, home, away, gh=None, ga=None, finished=False):
     return {"match": match, "home": home, "away": away, "goals_home": gh,
             "goals_away": ga, "pens_home": None, "pens_away": None, "finished": finished}

@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -64,6 +64,9 @@ _F_MATCH_ID = "id"
 _F_STAGE = "stage"
 _F_HOME_PENS = "homePenalties"
 _F_AWAY_PENS = "awayPenalties"
+# Candidate keys for a kickoff date; the payload's exact name is unconfirmed,
+# so each is probed and the first ISO-parseable value wins (best-effort).
+_F_DATE_KEYS = ("date", "matchDate", "dateTime", "startTime", "utcDate")
 
 # Knockout matches share the official bracket numbering (data/knockout_bracket.json):
 # the source `id` IS the bracket match number. Stage names (Spanish) map to the
@@ -269,7 +272,11 @@ def _merge_knockout(*parsed_lists: List[dict]) -> List[dict]:
         for ko in parsed:
             cur = merged.get(ko["match"])
             if cur is None or (ko["finished"] and not cur["finished"]):
+                if cur is not None and not ko.get("date"):
+                    ko = {**ko, "date": cur.get("date")}
                 merged[ko["match"]] = ko
+            elif not cur.get("date") and ko.get("date"):
+                cur["date"] = ko["date"]
     return list(merged.values())
 
 
@@ -281,13 +288,27 @@ def _expected_round(match_id: int, stage: Optional[str]) -> bool:
     return rng is None or rng[0] <= match_id <= rng[1]
 
 
+def _match_date(match: dict) -> Optional[str]:
+    """Best-effort kickoff date (ISO 'YYYY-MM-DD') from a payload entry."""
+    for key in _F_DATE_KEYS:
+        val = match.get(key)
+        if isinstance(val, str) and len(val) >= 10:
+            try:
+                date.fromisoformat(val[:10])
+            except ValueError:
+                continue
+            return val[:10]
+    return None
+
+
 def _parse_knockout(payload: object) -> List[dict]:
     """Knockout games keyed by their bracket match number (73-104).
 
     Returns one dict per match in range with the canonicalized team names,
-    scores and penalties, and a `finished` flag (both scores present). Teams
-    that are still placeholders (no resolvable name) come back as None and are
-    filtered out downstream. Stage-vs-id mismatches are dropped.
+    scores and penalties, a kickoff date when the payload carries one, and a
+    `finished` flag (both scores present). Teams that are still placeholders
+    (no resolvable name) come back as None and are filtered out downstream.
+    Stage-vs-id mismatches are dropped.
     """
     parsed: List[dict] = []
     for match in _as_match_list(payload):
@@ -311,6 +332,7 @@ def _parse_knockout(payload: object) -> List[dict]:
                 "goals_away": ga if isinstance(ga, int) else None,
                 "pens_home": ph if isinstance(ph, int) else None,
                 "pens_away": pa if isinstance(pa, int) else None,
+                "date": _match_date(match),
                 "finished": isinstance(gh, int) and isinstance(ga, int),
             }
         )
@@ -374,6 +396,7 @@ def _store_scraped_knockout(parsed: List[dict], messages: List[str]) -> int:
             goals_home=ko["goals_home"], goals_away=ko["goals_away"],
             pens_home=ko["pens_home"], pens_away=ko["pens_away"],
             status=status, source="scraped",
+            date=ko.get("date") or (existing.get("date") if existing else None),
         )
         stored += 1
     if pending:

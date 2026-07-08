@@ -89,6 +89,18 @@ export interface ResultIn {
   status: 'live' | 'final';
 }
 
+export interface TeamAdjustmentIn {
+  injury_delta: number;
+  note: string;
+}
+
+export interface TeamAdjustment extends TeamAdjustmentIn {
+  team: string;
+  updated_at: string;
+  base_injury: number;
+  effective_injury: number;
+}
+
 export interface ScrapeEloUpdate {
   team: string;
   live_elo: number;
