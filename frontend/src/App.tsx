@@ -76,6 +76,17 @@ export default function App() {
         <div className="footnote">
           <b>SWC26</b> · {t('footnote')}
         </div>
+
+        <div className="signature">
+          © 2026 Andrés Ricardo Flores Velarde ·{' '}
+          <a
+            href="https://github.com/AndrewFlovel/SWC26/blob/main/LICENSE"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('license')}
+          </a>
+        </div>
       </div>
     </>
   );

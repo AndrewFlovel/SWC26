@@ -33,6 +33,7 @@ const dictionaries = {
     footnote:
       'Monte Carlo engine · Dixon-Coles ρ = −0.13 · 48 nations · 16 venues · ' +
       'built from deep-research telemetry, June 2026',
+    license: 'MIT License',
     group: 'Group',
     match: 'Match',
     analyze: 'Analyze →',
@@ -201,6 +202,7 @@ const dictionaries = {
     footnote:
       'Motor Monte Carlo · Dixon-Coles ρ = −0.13 · 48 selecciones · 16 sedes · ' +
       'construido con telemetría de investigación profunda, junio 2026',
+    license: 'Licencia MIT',
     group: 'Grupo',
     match: 'Partido',
     analyze: 'Analizar →',
@@ -373,6 +375,7 @@ const dictionaries = {
     footnote:
       'Motor Monte Carlo · Dixon-Coles ρ = −0.13 · 48 seleções · 16 estádios · ' +
       'construído com telemetria de pesquisa profunda, junho de 2026',
+    license: 'Licença MIT',
     group: 'Grupo',
     match: 'Partida',
     analyze: 'Analisar →',

@@ -676,6 +676,23 @@ table.matrix td {
   color: var(--blood);
 }
 
+.signature {
+  margin: 8px 0 32px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.signature a {
+  color: var(--blood);
+  text-decoration: none;
+}
+
+.signature a:hover {
+  text-decoration: underline;
+}
+
 /* ---------- results control ---------- */
 .view-tabs {
   display: flex;
