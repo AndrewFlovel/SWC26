@@ -164,3 +164,12 @@ monteCarlo.py          Pipeline predictivo original de un solo archivo (referenc
 El dataset y la fundamentación del modelo derivan de `research.md` (Fases 1–3:
 infraestructura, clima, logística, fisiología, táctica y la base matemática de
 Dixon-Coles). El motor refactoriza y extiende `monteCarlo.py`.
+
+## Licencia
+
+Este proyecto está licenciado bajo la [Licencia MIT](LICENSE).
+Copyright © 2026 Andrés Ricardo Flores Velarde.
+
+SWC26 es un proyecto no oficial con fines educativos. No está afiliado a la
+FIFA ni cuenta con su respaldo. Los datos de equipos y jugadores se obtienen
+de fuentes públicas (FBref, Sofascore) para uso educativo y de investigación.
