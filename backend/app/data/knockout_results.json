@@ -2,14 +2,38 @@
   "100": {
     "away": "Switzerland",
     "date": null,
-    "goals_away": null,
-    "goals_home": null,
+    "goals_away": 1,
+    "goals_home": 3,
     "home": "Argentina",
     "pens_away": null,
     "pens_home": null,
     "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-15T18:32:16.107271+00:00"
+  },
+  "101": {
+    "away": "Spain",
+    "date": null,
+    "goals_away": 2,
+    "goals_home": 0,
+    "home": "France",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
+    "status": "final",
+    "updated_at": "2026-07-15T18:32:16.105788+00:00"
+  },
+  "102": {
+    "away": "Argentina",
+    "date": null,
+    "goals_away": null,
+    "goals_home": null,
+    "home": "England",
+    "pens_away": null,
+    "pens_home": null,
+    "source": "scraped",
     "status": "scheduled",
-    "updated_at": "2026-07-08T16:00:11.188535+00:00"
+    "updated_at": "2026-07-15T18:32:16.127937+00:00"
   },
   "73": {
     "away": "Canada",
@@ -21,7 +45,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.185189+00:00"
+    "updated_at": "2026-07-15T18:32:16.127216+00:00"
   },
   "74": {
     "away": "Japan",
@@ -33,7 +57,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.183758+00:00"
+    "updated_at": "2026-07-15T18:32:16.126278+00:00"
   },
   "75": {
     "away": "Paraguay",
@@ -45,7 +69,7 @@
     "pens_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.181959+00:00"
+    "updated_at": "2026-07-15T18:32:16.125314+00:00"
   },
   "76": {
     "away": "Morocco",
@@ -57,7 +81,7 @@
     "pens_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.181410+00:00"
+    "updated_at": "2026-07-15T18:32:16.124333+00:00"
   },
   "77": {
     "away": "Norway",
@@ -69,7 +93,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.180961+00:00"
+    "updated_at": "2026-07-15T18:32:16.123332+00:00"
   },
   "78": {
     "away": "Sweden",
@@ -81,7 +105,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.180508+00:00"
+    "updated_at": "2026-07-15T18:32:16.122237+00:00"
   },
   "79": {
     "away": "Ecuador",
@@ -93,7 +117,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.180038+00:00"
+    "updated_at": "2026-07-15T18:32:16.120813+00:00"
   },
   "80": {
     "away": "DR Congo",
@@ -105,7 +129,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.179586+00:00"
+    "updated_at": "2026-07-15T18:32:16.119562+00:00"
   },
   "81": {
     "away": "Senegal",
@@ -117,7 +141,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.179097+00:00"
+    "updated_at": "2026-07-15T18:32:16.117868+00:00"
   },
   "82": {
     "away": "Bosnia and Herzegovina",
@@ -129,7 +153,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.178645+00:00"
+    "updated_at": "2026-07-15T18:32:16.117302+00:00"
   },
   "83": {
     "away": "Austria",
@@ -141,7 +165,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.178192+00:00"
+    "updated_at": "2026-07-15T18:32:16.116565+00:00"
   },
   "84": {
     "away": "Croatia",
@@ -153,7 +177,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.177724+00:00"
+    "updated_at": "2026-07-15T18:32:16.116035+00:00"
   },
   "85": {
     "away": "Algeria",
@@ -165,7 +189,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.177221+00:00"
+    "updated_at": "2026-07-15T18:32:16.115521+00:00"
   },
   "86": {
     "away": "Egypt",
@@ -177,7 +201,7 @@
     "pens_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.176658+00:00"
+    "updated_at": "2026-07-15T18:32:16.115033+00:00"
   },
   "87": {
     "away": "Cape Verde",
@@ -189,7 +213,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.176155+00:00"
+    "updated_at": "2026-07-15T18:32:16.114518+00:00"
   },
   "88": {
     "away": "Ghana",
@@ -201,7 +225,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.175710+00:00"
+    "updated_at": "2026-07-15T18:32:16.114028+00:00"
   },
   "89": {
     "away": "Morocco",
@@ -213,7 +237,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.175230+00:00"
+    "updated_at": "2026-07-15T18:32:16.113509+00:00"
   },
   "90": {
     "away": "France",
@@ -225,7 +249,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.174731+00:00"
+    "updated_at": "2026-07-15T18:32:16.112995+00:00"
   },
   "91": {
     "away": "Norway",
@@ -237,7 +261,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.173929+00:00"
+    "updated_at": "2026-07-15T18:32:16.112312+00:00"
   },
   "92": {
     "away": "England",
@@ -249,7 +273,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.173136+00:00"
+    "updated_at": "2026-07-15T18:32:16.111751+00:00"
   },
   "93": {
     "away": "Spain",
@@ -261,7 +285,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.172530+00:00"
+    "updated_at": "2026-07-15T18:32:16.111127+00:00"
   },
   "94": {
     "away": "Belgium",
@@ -273,7 +297,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.171760+00:00"
+    "updated_at": "2026-07-15T18:32:16.110626+00:00"
   },
   "95": {
     "away": "Egypt",
@@ -285,7 +309,7 @@
     "pens_home": null,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.170975+00:00"
+    "updated_at": "2026-07-15T18:32:16.110120+00:00"
   },
   "96": {
     "away": "Colombia",
@@ -297,42 +321,42 @@
     "pens_home": 4,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.170133+00:00"
+    "updated_at": "2026-07-15T18:32:16.109584+00:00"
   },
   "97": {
     "away": "Morocco",
     "date": null,
-    "goals_away": null,
-    "goals_home": null,
+    "goals_away": 0,
+    "goals_home": 2,
     "home": "France",
     "pens_away": null,
     "pens_home": null,
     "source": "scraped",
-    "status": "scheduled",
-    "updated_at": "2026-07-08T16:00:11.186031+00:00"
+    "status": "final",
+    "updated_at": "2026-07-15T18:32:16.109069+00:00"
   },
   "98": {
     "away": "Belgium",
     "date": null,
-    "goals_away": null,
-    "goals_home": null,
+    "goals_away": 1,
+    "goals_home": 2,
     "home": "Spain",
     "pens_away": null,
     "pens_home": null,
     "source": "scraped",
-    "status": "scheduled",
-    "updated_at": "2026-07-08T16:00:11.186972+00:00"
+    "status": "final",
+    "updated_at": "2026-07-15T18:32:16.108532+00:00"
   },
   "99": {
     "away": "England",
     "date": null,
-    "goals_away": null,
-    "goals_home": null,
+    "goals_away": 2,
+    "goals_home": 1,
     "home": "Norway",
     "pens_away": null,
     "pens_home": null,
     "source": "scraped",
-    "status": "scheduled",
-    "updated_at": "2026-07-08T16:00:11.187807+00:00"
+    "status": "final",
+    "updated_at": "2026-07-15T18:32:16.107922+00:00"
   }
 }

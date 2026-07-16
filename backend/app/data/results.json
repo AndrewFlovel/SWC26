@@ -88,42 +88,42 @@
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.168713+00:00"
+    "updated_at": "2026-07-15T18:32:16.101396+00:00"
   },
   "C2": {
     "goals_away": 1,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.167549+00:00"
+    "updated_at": "2026-07-15T18:32:16.100643+00:00"
   },
   "C3": {
     "goals_away": 1,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.146320+00:00"
+    "updated_at": "2026-07-15T18:32:16.076120+00:00"
   },
   "C4": {
     "goals_away": 0,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.145474+00:00"
+    "updated_at": "2026-07-15T18:32:16.074749+00:00"
   },
   "C5": {
     "goals_away": 3,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.127000+00:00"
+    "updated_at": "2026-07-15T18:32:16.051619+00:00"
   },
   "C6": {
     "goals_away": 2,
     "goals_home": 4,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.126024+00:00"
+    "updated_at": "2026-07-15T18:32:16.050738+00:00"
   },
   "D1": {
     "goals_away": 1,
@@ -137,370 +137,370 @@
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.165333+00:00"
+    "updated_at": "2026-07-15T18:32:16.099889+00:00"
   },
   "D3": {
     "goals_away": 0,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.147121+00:00"
+    "updated_at": "2026-07-15T18:32:16.077515+00:00"
   },
   "D4": {
     "goals_away": 1,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.144458+00:00"
+    "updated_at": "2026-07-15T18:32:16.073216+00:00"
   },
   "D5": {
     "goals_away": 2,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.118305+00:00"
+    "updated_at": "2026-07-15T18:32:16.046060+00:00"
   },
   "D6": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.115285+00:00"
+    "updated_at": "2026-07-15T18:32:16.045209+00:00"
   },
   "E1": {
     "goals_away": 1,
     "goals_home": 7,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.164677+00:00"
+    "updated_at": "2026-07-15T18:32:16.099175+00:00"
   },
   "E2": {
     "goals_away": 0,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.163148+00:00"
+    "updated_at": "2026-07-15T18:32:16.097629+00:00"
   },
   "E3": {
     "goals_away": 1,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.143039+00:00"
+    "updated_at": "2026-07-15T18:32:16.069147+00:00"
   },
   "E4": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.142341+00:00"
+    "updated_at": "2026-07-15T18:32:16.068310+00:00"
   },
   "E5": {
     "goals_away": 2,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.123293+00:00"
+    "updated_at": "2026-07-15T18:32:16.048792+00:00"
   },
   "E6": {
     "goals_away": 1,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.124666+00:00"
+    "updated_at": "2026-07-15T18:32:16.049807+00:00"
   },
   "F1": {
     "goals_away": 2,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.164003+00:00"
+    "updated_at": "2026-07-15T18:32:16.098348+00:00"
   },
   "F2": {
     "goals_away": 1,
     "goals_home": 5,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.162529+00:00"
+    "updated_at": "2026-07-15T18:32:16.096821+00:00"
   },
   "F3": {
     "goals_away": 1,
     "goals_home": 5,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.143731+00:00"
+    "updated_at": "2026-07-15T18:32:16.071085+00:00"
   },
   "F4": {
     "goals_away": 4,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.141555+00:00"
+    "updated_at": "2026-07-15T18:32:16.067543+00:00"
   },
   "F5": {
     "goals_away": 1,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.121997+00:00"
+    "updated_at": "2026-07-15T18:32:16.047760+00:00"
   },
   "F6": {
     "goals_away": 3,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.120273+00:00"
+    "updated_at": "2026-07-15T18:32:16.046935+00:00"
   },
   "G1": {
     "goals_away": 2,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.159670+00:00"
+    "updated_at": "2026-07-15T18:32:16.093270+00:00"
   },
   "G2": {
     "goals_away": 1,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.161174+00:00"
+    "updated_at": "2026-07-15T18:32:16.095163+00:00"
   },
   "G3": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.140124+00:00"
+    "updated_at": "2026-07-15T18:32:16.065898+00:00"
   },
   "G4": {
     "goals_away": 3,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.138375+00:00"
+    "updated_at": "2026-07-15T18:32:16.064259+00:00"
   },
   "G5": {
     "goals_away": 1,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.105511+00:00"
+    "updated_at": "2026-07-15T18:32:16.038799+00:00"
   },
   "G6": {
     "goals_away": 5,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.107090+00:00"
+    "updated_at": "2026-07-15T18:32:16.040299+00:00"
   },
   "H1": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.161893+00:00"
+    "updated_at": "2026-07-15T18:32:16.095928+00:00"
   },
   "H2": {
     "goals_away": 1,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.160477+00:00"
+    "updated_at": "2026-07-15T18:32:16.094210+00:00"
   },
   "H3": {
     "goals_away": 0,
     "goals_home": 4,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.140865+00:00"
+    "updated_at": "2026-07-15T18:32:16.066681+00:00"
   },
   "H4": {
     "goals_away": 2,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.139273+00:00"
+    "updated_at": "2026-07-15T18:32:16.065091+00:00"
   },
   "H5": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.108860+00:00"
+    "updated_at": "2026-07-15T18:32:16.041713+00:00"
   },
   "H6": {
     "goals_away": 1,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.110391+00:00"
+    "updated_at": "2026-07-15T18:32:16.042590+00:00"
   },
   "I1": {
     "goals_away": 1,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.156931+00:00"
+    "updated_at": "2026-07-15T18:32:16.091778+00:00"
   },
   "I2": {
     "goals_away": 4,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.156161+00:00"
+    "updated_at": "2026-07-15T18:32:16.089368+00:00"
   },
   "I3": {
     "goals_away": 0,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.135767+00:00"
+    "updated_at": "2026-07-15T18:32:16.061738+00:00"
   },
   "I4": {
     "goals_away": 2,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.134455+00:00"
+    "updated_at": "2026-07-15T18:32:16.060674+00:00"
   },
   "I5": {
     "goals_away": 4,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.113683+00:00"
+    "updated_at": "2026-07-15T18:32:16.044308+00:00"
   },
   "I6": {
     "goals_away": 0,
     "goals_home": 5,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.111827+00:00"
+    "updated_at": "2026-07-15T18:32:16.043426+00:00"
   },
   "J1": {
     "goals_away": 0,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.155284+00:00"
+    "updated_at": "2026-07-15T18:32:16.086468+00:00"
   },
   "J2": {
     "goals_away": 1,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.154310+00:00"
+    "updated_at": "2026-07-15T18:32:16.084178+00:00"
   },
   "J3": {
     "goals_away": 0,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.137100+00:00"
+    "updated_at": "2026-07-15T18:32:16.063320+00:00"
   },
   "J4": {
     "goals_away": 2,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.132512+00:00"
+    "updated_at": "2026-07-15T18:32:16.059433+00:00"
   },
   "J5": {
     "goals_away": 3,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.095998+00:00"
+    "updated_at": "2026-07-15T18:32:16.032790+00:00"
   },
   "J6": {
     "goals_away": 3,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.094203+00:00"
+    "updated_at": "2026-07-15T18:32:16.031316+00:00"
   },
   "K1": {
     "goals_away": 1,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.152590+00:00"
+    "updated_at": "2026-07-15T18:32:16.082886+00:00"
   },
   "K2": {
     "goals_away": 3,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.147976+00:00"
+    "updated_at": "2026-07-15T18:32:16.078890+00:00"
   },
   "K3": {
     "goals_away": 0,
     "goals_home": 5,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.131353+00:00"
+    "updated_at": "2026-07-15T18:32:16.057712+00:00"
   },
   "K4": {
     "goals_away": 0,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.127938+00:00"
+    "updated_at": "2026-07-15T18:32:16.052737+00:00"
   },
   "K5": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.097423+00:00"
+    "updated_at": "2026-07-15T18:32:16.033812+00:00"
   },
   "K6": {
     "goals_away": 1,
     "goals_home": 3,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.098988+00:00"
+    "updated_at": "2026-07-15T18:32:16.034689+00:00"
   },
   "L1": {
     "goals_away": 2,
     "goals_home": 4,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.151203+00:00"
+    "updated_at": "2026-07-15T18:32:16.081613+00:00"
   },
   "L2": {
     "goals_away": 0,
     "goals_home": 1,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.149379+00:00"
+    "updated_at": "2026-07-15T18:32:16.080231+00:00"
   },
   "L3": {
     "goals_away": 0,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.130366+00:00"
+    "updated_at": "2026-07-15T18:32:16.055612+00:00"
   },
   "L4": {
     "goals_away": 1,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.128892+00:00"
+    "updated_at": "2026-07-15T18:32:16.053747+00:00"
   },
   "L5": {
     "goals_away": 2,
     "goals_home": 0,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.101858+00:00"
+    "updated_at": "2026-07-15T18:32:16.035770+00:00"
   },
   "L6": {
     "goals_away": 1,
     "goals_home": 2,
     "source": "scraped",
     "status": "final",
-    "updated_at": "2026-07-08T16:00:11.103937+00:00"
+    "updated_at": "2026-07-15T18:32:16.037353+00:00"
   }
 }
